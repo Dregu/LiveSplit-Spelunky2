@@ -44,7 +44,7 @@ startup
 	settings.Add("stcamp", false, "[AS+T] Start on player selection (use with loadless)", "st");
 
 	settings.Add("sp", true, "Splitting");
-	settings.Add("trans", true, "[any%] Split on any level transition", "sp");
+	settings.Add("trans", true, "[any%] Split on any level transition screen", "sp");
 	settings.Add("world", false, "Split on any world transition screen", "sp");
 	settings.Add("tiamat", true, "[any%] [AS+T] Split on end cutscene after Tiamat", "sp");
 	settings.Add("hundun", true, "Split on end cutscene after Hundun", "sp");
@@ -165,29 +165,30 @@ update
 		vars.paused = 0;
 		print("Unpaused");
 	}
-	if(settings["trans"] && current.trans == 18 && old.trans != 18 && current.screen == 13) {
-		print("Setting delayed split after level transition at "+(current.counter+1).ToString());
+	if(current.trans == 18 && old.trans != 18) {
+		print("Clearing pausetimer on level transition");
 		vars.paused = 0;
 		vars.pausetime = 0;
+	}
+	if(settings["trans"] && current.trans == 18 && old.trans != 18 && current.screen == 13) {
+		print("Setting delayed split after level transition at "+(current.counter+1).ToString());
 		vars.splitAt = current.counter+1;
 	} else if(settings["tiamat"] && current.trans == 18 && old.trans != 18 && current.world == 6 && current.level == 4) {
 		print("Setting delayed split after Tiamat at "+(current.counter+1).ToString());
-		vars.paused = 0;
-		vars.pausetime = 0;
 		vars.splitAt = current.counter+1;
 	} else if(settings["hundun"] && current.trans == 18 && old.trans != 18 && current.world == 7 && current.level == 4) {
 		print("Setting delayed split after Hundun at "+(current.counter+1).ToString());
-		vars.paused = 0;
-		vars.pausetime = 0;
 		vars.splitAt = current.counter+1;
 	} else if(settings["co"] && current.trans == 18 && old.trans != 18 && current.level == 98) {
 		print("Setting delayed split after CO at "+(current.counter+1).ToString());
-		vars.paused = 0;
-		vars.pausetime = 0;
 		vars.splitAt = current.counter+1;
 	}
+	/*if(settings["world"] && current.world != old.world && current.world > 1) {
+		print("Setting delayed split because new world ("+old.world+"->"+current.world+") at "+(current.counter+1).ToString());
+		vars.splitAt = current.counter+1;
+	}*/
 	if ((settings["rstitle"] && current.screen == 3 && old.screen != 3)
-		|| (settings["rsmenu"] && !current.ingame && !current.playing && current.pause == 0)) {
+		|| (settings["rsmenu"] && current.screen == 4 && old.screen != 4)) {
 		print("Clearing state because of reset condition");
 		vars.paused = 0;
 		vars.pausetime = 0;
