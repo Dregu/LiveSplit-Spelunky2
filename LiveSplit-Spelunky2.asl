@@ -44,9 +44,9 @@ startup
 	settings.Add("stcamp", false, "[AS+T] Start on player selection (use with loadless)", "st");
 
 	settings.Add("sp", true, "Splitting");
-	settings.Add("trans", true, "[any%] Split on any level transition/ending screen", "sp");
+	settings.Add("trans", true, "[any%] Split between levels", "sp");
 	settings.Add("world", false, "Split on any world transition screen", "sp");
-	settings.Add("tiamat", false, "[AS+T] Split on end cutscene after Tiamat", "sp");
+	settings.Add("tiamat", false, "[any%] [AS+T] Split on end cutscene after Tiamat", "sp");
 	settings.Add("hundun", false, "Split on end cutscene after Hundun", "sp");
 	settings.Add("co", false, "Split on end cutscene after Cosmic Ocean", "sp");
 	settings.Add("shortcut", false, "[AS+T] Split on Terra encounters (doesn't actually check if you did the thing)", "sp");
@@ -170,18 +170,18 @@ update
 		vars.paused = 0;
 		vars.pausetime = 0;
 		vars.splitAt = current.counter+1;
-	} else if(settings["tiamat"] && current.trans == 18 && old.trans != 18 && current.screen == 13 && current.world == 6 && current.level == 4) {
+	} else if(settings["tiamat"] && current.trans == 18 && old.trans != 18 && current.world == 6 && current.level == 4) {
 		print("Setting delayed split after Tiamat at "+(current.counter+1).ToString());
 		vars.paused = 0;
 		vars.pausetime = 0;
 		vars.splitAt = current.counter+1;
-	} else if(settings["hundun"] && current.trans == 18 && old.trans != 18 && current.screen == 13 && current.world == 7 && current.level == 4) {
-		print("Setting delayed split after Tiamat at "+(current.counter+1).ToString());
+	} else if(settings["hundun"] && current.trans == 18 && old.trans != 18 && current.world == 7 && current.level == 4) {
+		print("Setting delayed split after Hundun at "+(current.counter+1).ToString());
 		vars.paused = 0;
 		vars.pausetime = 0;
 		vars.splitAt = current.counter+1;
-	} else if(settings["co"] && current.trans == 18 && old.trans != 1 && current.screen == 13 && current.level == 98) {
-		print("Setting delayed split after CO ending at "+(current.counter+1).ToString());
+	} else if(settings["co"] && current.trans == 18 && old.trans != 18 && current.level == 98) {
+		print("Setting delayed split after CO at "+(current.counter+1).ToString());
 		vars.paused = 0;
 		vars.pausetime = 0;
 		vars.splitAt = current.counter+1;
