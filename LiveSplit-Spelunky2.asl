@@ -44,11 +44,11 @@ startup
 	settings.Add("stcamp", false, "[AS+T] Start on player selection (use with loadless)", "st");
 
 	settings.Add("sp", true, "Splitting");
-	settings.Add("trans", true, "[any%] Split between levels", "sp");
+	settings.Add("trans", true, "[any%] Split on any level transition", "sp");
 	settings.Add("world", false, "Split on any world transition screen", "sp");
-	settings.Add("tiamat", false, "[any%] [AS+T] Split on end cutscene after Tiamat", "sp");
-	settings.Add("hundun", false, "Split on end cutscene after Hundun", "sp");
-	settings.Add("co", false, "Split on end cutscene after Cosmic Ocean", "sp");
+	settings.Add("tiamat", true, "[any%] [AS+T] Split on end cutscene after Tiamat", "sp");
+	settings.Add("hundun", true, "Split on end cutscene after Hundun", "sp");
+	settings.Add("co", true, "Split on end cutscene after Cosmic Ocean", "sp");
 	settings.Add("shortcut", false, "[AS+T] Split on Terra encounters (doesn't actually check if you did the thing)", "sp");
 	settings.Add("tutorial", false, "[AS+T] Split after completing the tutorial", "sp");
 	settings.Add("fade", false, "Split on walls are shifting/credits (this is broken)", "sp");
