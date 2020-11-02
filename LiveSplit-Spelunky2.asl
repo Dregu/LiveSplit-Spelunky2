@@ -12,6 +12,7 @@ state("Spel2")
 state("Spel2", "1.14.0")
 {
 	byte screen : 0x21FCFEF0, 0x10;
+	byte loading : 0x21FCFEF0, 0x14;
 	byte trans : 0x21FCFEF0, 0x28;
 	byte fade : 0x21FCFEF0, 0x2c;
 	bool ingame : 0x21FCFEF0, 0x30;
@@ -26,6 +27,7 @@ state("Spel2", "1.14.0")
 state("Spel2", "1.12.1e")
 {
 	byte screen : 0x21FB3EF0, 0x10;
+	byte loading : 0x21FB3EF0, 0x14;
 	byte trans : 0x21FB3EF0, 0x28;
 	byte fade : 0x21FB3EF0, 0x2c;
 	bool ingame : 0x21FB3EF0, 0x30;
@@ -41,7 +43,7 @@ startup
 {
 	settings.Add("st", true, "Starting");
 	settings.Add("stlevel", true, "[any%] Start on first level", "st");
-	settings.Add("stcamp", false, "[AS+T] Start on player selection (use with loadless)", "st");
+	settings.Add("stcamp", false, "[AS+T] Start on player selection", "st");
 
 	settings.Add("sp", true, "Splitting");
 	settings.Add("trans", true, "[any%] Split on any level transition screen", "sp");
@@ -50,7 +52,7 @@ startup
 	settings.Add("hundun", true, "Split on end cutscene after Hundun", "sp");
 	settings.Add("co", true, "Split on end cutscene after Cosmic Ocean", "sp");
 	settings.Add("shortcut", false, "[AS+T] Split on Terra encounters (doesn't actually check if you did the thing)", "sp");
-	settings.Add("tutorial", false, "[AS+T] Split after completing the tutorial", "sp");
+	settings.Add("tutorial", false, "[AS+T] Split after first \"walls are shifting\" (e.g. after completing the tutorial)", "sp");
 	settings.Add("fade", false, "Split on walls are shifting/credits (this is broken)", "sp");
 	settings.Add("level", false, "Split on new level start (this is stupid)", "sp");
 
@@ -59,9 +61,15 @@ startup
 	settings.Add("rsmenu", true, "Reset on main menu", "rs");
 	settings.Add("rstitle", true, "Reset on title screen", "rs");
 
-	settings.Add("tm", true, "Timing");
-	settings.Add("pause", true, "Keep timer running when paused instead of updating on level change", "tm");
-	settings.Add("loadless", false, "[AS+T] Loadless mode (uses global frame counter instead of gametime)", "tm");
+	settings.Add("tm", true, "Timing method used by \"Game Time\" comparison (select exactly one)");
+	settings.Add("ingame", true, "[any%] Ingame timer (pauses on level transitions, resets on camp)", "tm");
+	settings.Add("loadless", false, "[AS+T] Loadless timer (uses real time minus levelgen time)", "tm");
+	settings.Add("framecount", false, "Global frame counter (basically runs whenever you can interact with the game)", "tm");
+	settings.Add("ingamesum", false, "Sum of ingame times (runs in game and in camp, persists across restarts, pauses in main menu and between levels)", "tm");
+	settings.Add("realtime", false, "Real time (yes it just copies real time to game time)", "tm");
+
+	settings.Add("misc", true, "Miscellaneous");
+	settings.Add("pause", true, "Keep ingame timers running when paused instead of updating on level change (just a visual thing during levels, doesn't change the split times or total time)", "misc");
 }
 
 init
@@ -75,6 +83,9 @@ init
 	vars.started = 0;
 	vars.pausetime = 0;
 	vars.paused = 0;
+	vars.loadtime = 0.0;
+	vars.loaded = 0.0;
+	vars.totaltime = 0;
 	vars.splitAt = 0;
 	vars.shortcuts = 0;
 	vars.tutorial = 0;
@@ -90,6 +101,9 @@ start
 		print("Starting timer");
 		vars.paused = 0;
 		vars.pausetime = 0;
+		vars.loadtime = 0.0;
+		vars.loaded = 0.0;
+		vars.totaltime = 0;
 		vars.splitAt = 0;
 		vars.shortcuts = 0;
 		vars.tutorial = 0;
@@ -145,6 +159,9 @@ reset
 		print("Resetting timer");
 		vars.paused = 0;
 		vars.pausetime = 0;
+		vars.loadtime = 0.0;
+		vars.loaded = 0.0;
+		vars.totaltime = 0;
 		vars.splitAt = 0;
 		vars.started = 0;
 		vars.shortcuts = 0;
@@ -164,11 +181,24 @@ update
 		vars.pausetime += current.counter-vars.paused;
 		vars.paused = 0;
 		print("Unpaused");
+	} else if(current.loading == 2 && old.loading != 2) {
+		timer.IsGameTimePaused = true;
+		vars.loaded = Environment.TickCount;
+		print("Loading");
+	} else if(current.loading != 2 && old.loading == 2) {
+		timer.IsGameTimePaused = false;
+		vars.loadtime += Environment.TickCount-vars.loaded;
+		double delta = Environment.TickCount-vars.loaded;
+		vars.loaded = 0;
+		print("Finished loading, it took "+delta/1000.0+"s");
 	}
 	if(current.trans == 18 && old.trans != 18) {
 		print("Clearing pausetimer on level transition");
 		vars.paused = 0;
 		vars.pausetime = 0;
+	}
+	if(current.igt < old.igt) {
+		vars.totaltime += old.igt;
 	}
 	if(settings["trans"] && current.trans == 18 && old.trans != 18 && current.screen == 13) {
 		print("Setting delayed split after level transition at "+(current.counter+1).ToString());
@@ -192,26 +222,32 @@ update
 		print("Clearing state because of reset condition");
 		vars.paused = 0;
 		vars.pausetime = 0;
+		vars.loadtime = 0;
+		vars.loaded = 0;
 		vars.splitAt = 0;
 		vars.started = 0;
 		vars.shortcuts = 0;
 		vars.tutorial = 0;
 	}
+	// debug
+	if(current.screen != old.screen || current.trans != old.trans || current.ingame != old.ingame || current.playing != old.playing || current.pause != old.pause || current.world != old.world || current.level != old.level) {
+		print("frame: "+current.counter+" igt: "+current.igt+" screen: "+current.screen+" trans: "+current.trans+" ingame: "+current.ingame+" playing: "+current.playing+" pause: "+current.pause+" world: "+current.world+" level: "+current.level+" load time: "+vars.loadtime/1000.0); 
+	}
 }
 
-isLoading
+/*isLoading
 {
-	return current.pause > 1;
-}
+	return current.loading == 2;
+}*/
 
 gameTime
 {
-	if(!settings["loadless"] && current.igt == old.igt) {
+	if((settings["ingame"] || settings["ingamesum"]) && current.igt == old.igt) {
 		timer.IsGameTimePaused = true;
 	} else {
 		timer.IsGameTimePaused = false;
 	}
-	if(!settings["loadless"]) {
+	if(settings["ingame"]) {
 		if(settings["pause"]) {
 			if(current.pause == 1) {
 				return TimeSpan.FromSeconds((current.igt+vars.pausetime+current.counter-vars.paused)/60.0);
@@ -221,7 +257,21 @@ gameTime
 		} else {
 			return TimeSpan.FromSeconds((current.igt)/60.0);
 		}
-	} else {
+	} else if(settings["framecount"]) {
 		return TimeSpan.FromSeconds((current.counter-vars.started)/60.0);
-	}
+	} else if(settings["loadless"]) {
+		return TimeSpan.FromMilliseconds(timer.CurrentTime.RealTime.Value.TotalMilliseconds-vars.loadtime);
+	} else if(settings["ingamesum"]) {
+		if(settings["pause"]) {
+			if(current.pause == 1) {
+				return TimeSpan.FromSeconds((current.igt+vars.totaltime+vars.pausetime+current.counter-vars.paused)/60.0);
+			} else {
+				return TimeSpan.FromSeconds((current.igt+vars.totaltime+vars.pausetime)/60.0);
+			}
+		} else {
+			return TimeSpan.FromSeconds((current.igt+vars.totaltime)/60.0);
+		}
+	} else if(settings["realtime"]) {
+		return timer.CurrentTime.RealTime;
+	} 
 }
