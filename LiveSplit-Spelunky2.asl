@@ -9,6 +9,21 @@ state("Spel2")
 	// unknown version
 }
 
+state("Spel2", "1.12.1e")
+{
+	byte screen : 0x21FB3EF0, 0x10;
+	byte loading : 0x21FB3EF0, 0x14;
+	byte trans : 0x21FB3EF0, 0x28;
+	byte fade : 0x21FB3EF0, 0x2c;
+	bool ingame : 0x21FB3EF0, 0x30;
+	bool playing : 0x21FB3EF0, 0x31;
+	byte pause : 0x21FB3EF0, 0x32;
+	int counter : 0x21FB3EF0, -192;
+	int igt : 0x21FB3EF0, 0x60;
+	byte world : 0x21FB3EF0, 0x65;
+	byte level : 0x21FB3EF0, 0x66;
+}
+
 state("Spel2", "1.14.0")
 {
 	byte screen : 0x21FCFEF0, 0x10;
@@ -24,19 +39,19 @@ state("Spel2", "1.14.0")
 	byte level : 0x21FCFEF0, 0x66;
 }
 
-state("Spel2", "1.12.1e")
+state("Spel2", "1.15.0a")
 {
-	byte screen : 0x21FB3EF0, 0x10;
-	byte loading : 0x21FB3EF0, 0x14;
-	byte trans : 0x21FB3EF0, 0x28;
-	byte fade : 0x21FB3EF0, 0x2c;
-	bool ingame : 0x21FB3EF0, 0x30;
-	bool playing : 0x21FB3EF0, 0x31;
-	byte pause : 0x21FB3EF0, 0x32;
-	int counter : 0x21FB3EF0, -192;
-	int igt : 0x21FB3EF0, 0x60;
-	byte world : 0x21FB3EF0, 0x65;
-	byte level : 0x21FB3EF0, 0x66;
+	byte screen : 0x21FDFF20, 0x10;
+	byte loading : 0x21FDFF20, 0x14;
+	byte trans : 0x21FDFF20, 0x28;
+	byte fade : 0x21FDFF20, 0x2c;
+	bool ingame : 0x21FDFF20, 0x30;
+	bool playing : 0x21FDFF20, 0x31;
+	byte pause : 0x21FDFF20, 0x32;
+	int counter : 0x21FDFF20, -192;
+	int igt : 0x21FDFF20, 0x60;
+	byte world : 0x21FDFF20, 0x65;
+	byte level : 0x21FDFF20, 0x66;
 }
 
 startup
@@ -77,6 +92,7 @@ init
 	switch (modules.First().ModuleMemorySize) {
 		case 570585088: version = "1.12.1e"; break;
 		case 570699776: version = "1.14.0"; break;
+		case 570769408: version = "1.15.0a"; break;
 		default:        version = ""; break;
 	}
 	print("Spelunky 2 size "+modules.First().ModuleMemorySize.ToString()+" is version "+version);
