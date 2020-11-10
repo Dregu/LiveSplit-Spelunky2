@@ -54,6 +54,21 @@ state("Spel2", "1.15.0a")
 	byte level : 0x21FDFF20, 0x66;
 }
 
+state("Spel2", "1.16.0")
+{
+	byte screen : 0x21fe2f60, 0x10;
+	byte loading : 0x21fe2f60, 0x14;
+	byte trans : 0x21fe2f60, 0x28;
+	byte fade : 0x21fe2f60, 0x2c;
+	bool ingame : 0x21fe2f60, 0x30;
+	bool playing : 0x21fe2f60, 0x31;
+	byte pause : 0x21fe2f60, 0x32;
+	int counter : 0x21fe2f60, -192;
+	int igt : 0x21fe2f60, 0x60;
+	byte world : 0x21fe2f60, 0x65;
+	byte level : 0x21fe2f60, 0x66;
+}
+
 startup
 {
 	settings.Add("st", true, "Starting");
@@ -93,6 +108,7 @@ init
 		case 570585088: version = "1.12.1e"; break;
 		case 570699776: version = "1.14.0"; break;
 		case 570769408: version = "1.15.0a"; break;
+		case 570781696: version = "1.16.0"; break;
 		default:        version = ""; break;
 	}
 	print("Spelunky 2 size "+modules.First().ModuleMemorySize.ToString()+" is version "+version);
@@ -109,6 +125,9 @@ init
 
 start
 {
+	if(version == "") {
+		return;
+	}
 	if(current.screen <= 3) {
 		return;
 	}
@@ -130,6 +149,9 @@ start
 
 split
 {
+	if(version == "") {
+		return;
+	}
 	if(current.screen <= 3) {
 		return;
 	}
@@ -169,6 +191,9 @@ split
 
 reset
 {
+	if(version == "") {
+		return;
+	}
 	if ((settings["rstitle"] && current.screen == 3 && old.screen != 3)
 		|| (settings["rsrestart"] && current.igt <= 1)
 		|| (settings["rsmenu"] && !current.ingame && !current.playing && current.pause == 0)) {
@@ -188,6 +213,9 @@ reset
 
 update
 {
+	if(version == "") {
+		return;
+	}
 	if(current.pause == 1 && old.pause == 0) {
 		timer.IsGameTimePaused = true;
 		vars.paused = current.counter;
@@ -258,6 +286,9 @@ update
 
 gameTime
 {
+	if(version == "") {
+		return;
+	}
 	if((settings["ingame"] || settings["ingamesum"]) && current.igt == old.igt) {
 		timer.IsGameTimePaused = true;
 	} else {
