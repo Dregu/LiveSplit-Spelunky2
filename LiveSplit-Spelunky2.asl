@@ -84,14 +84,14 @@ startup
 	settings.Add("co", true, "Split on end cutscene after Cosmic Ocean", "sp");
 	settings.Add("shortcut", false, "[AS+T] Split on completed shortcut tasks", "sp");
 	settings.Add("tutorial", false, "[AS+T] Split when entering the big door after tutorial", "sp");
-	//settings.Add("tutorial", false, "Split after first \"walls are shifting\" (e.g. after completing the tutorial)", "sp");
+	settings.Add("character", false, "Split on unlocking a new character", "sp");
 	settings.Add("fade", false, "Split on walls are shifting/credits (this is broken)", "sp");
 	settings.Add("level", false, "Split on new level start (this is stupid)", "sp");
 
 	settings.Add("rs", true, "Resetting");
-	settings.Add("rsrestart", true, "[any%] Reset on instant restart/return to camp", "rs");
-	settings.Add("rsmenu", true, "Reset on main menu", "rs");
-	settings.Add("rstitle", true, "Reset on title screen", "rs");
+	settings.Add("rsrestart", true, "[any%] Reset on instant restart/in camp", "rs");
+	settings.Add("rsmenu", true, "Reset in main menu", "rs");
+	settings.Add("rstitle", true, "Reset in title screen", "rs");
 
 	settings.Add("tm", true, "Timing method used by \"Game Time\" comparison (select exactly one)");
 	settings.Add("ingame", true, "[any%] Ingame timer (pauses on level transitions, resets on camp)", "tm");
@@ -174,6 +174,9 @@ split
 		return true;
 	} else if(settings["tutorial"] && current.savedata[0xe8] != old.savedata[0xe8] && current.savedata[0xe8] == 3) {
 		print("Splitting after tutorial");
+		return true;
+	} else if(settings["character"] && (current.savedata[0xe4] != old.savedata[0xe4] || current.savedata[0xe5] != old.savedata[0xe5] || current.savedata[0xe6] != old.savedata[0xe6])) {
+		print("Splitting because character unlocked");
 		return true;
 	}
 }
