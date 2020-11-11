@@ -67,6 +67,7 @@ state("Spel2", "1.16.0")
 	int igt : 0x21fe2f60, 0x60;
 	byte world : 0x21fe2f60, 0x65;
 	byte level : 0x21fe2f60, 0x66;
+	byte255 savedata : 0x21fe2f18, 0x18, 0, 0;
 }
 
 startup
@@ -81,8 +82,9 @@ startup
 	settings.Add("tiamat", true, "[any%] [AS+T] Split on end cutscene after Tiamat", "sp");
 	settings.Add("hundun", true, "Split on end cutscene after Hundun", "sp");
 	settings.Add("co", true, "Split on end cutscene after Cosmic Ocean", "sp");
-	settings.Add("shortcut", false, "[AS+T] Split on Terra encounters (doesn't actually check if you did the thing)", "sp");
-	settings.Add("tutorial", false, "[AS+T] Split after first \"walls are shifting\" (e.g. after completing the tutorial)", "sp");
+	settings.Add("shortcut", false, "[AS+T] Split on completed shortcut tasks", "sp");
+	settings.Add("tutorial", false, "[AS+T] Split when entering the big door after tutorial", "sp");
+	//settings.Add("tutorial", false, "Split after first \"walls are shifting\" (e.g. after completing the tutorial)", "sp");
 	settings.Add("fade", false, "Split on walls are shifting/credits (this is broken)", "sp");
 	settings.Add("level", false, "Split on new level start (this is stupid)", "sp");
 
@@ -102,6 +104,7 @@ startup
 	settings.Add("pause", true, "Keep ingame timers running when paused instead of updating on level change (just a visual thing during levels, doesn't change the split times or total time)", "misc");
 }
 
+
 init
 {
 	switch (modules.First().ModuleMemorySize) {
@@ -120,7 +123,6 @@ init
 	vars.totaltime = 0;
 	vars.splitAt = 0;
 	vars.shortcuts = 0;
-	vars.tutorial = 0;
 }
 
 start
@@ -141,7 +143,6 @@ start
 		vars.totaltime = 0;
 		vars.splitAt = 0;
 		vars.shortcuts = 0;
-		vars.tutorial = 0;
 		vars.started = current.counter;
 		return true;
 	}
@@ -168,23 +169,11 @@ split
 	} else if(settings["fade"] && (current.fade == 40 && old.fade != 40)) {
 		print("Splitting after fade");
 		return true;
-	} else if(settings["shortcut"] && current.trans == 18 && old.trans != 18 && current.screen == 13) {
-		if(vars.shortcuts < 3 && current.world == 2 && current.level == 4) {
-			vars.shortcuts++;
-			print("Splitting at 1-4 shortcut");
-			return true;
-		} else if(vars.shortcuts >= 3 && vars.shortcuts < 6 && current.world == 4 && current.level == 1) {
-			vars.shortcuts++;
-			print("Splitting at 3-1 shortcut");
-			return true;
-		} else if(vars.shortcuts >= 6 && vars.shortcuts < 9 && current.world == 5 && current.level == 4) {
-			vars.shortcuts++;
-			print("Splitting at 5-1 shortcut");
-			return true;
-		}
-	} else if(settings["tutorial"] && vars.tutorial == 0 && current.screen == 12) {
+	} else if(settings["shortcut"] && current.savedata[0xe9] != old.savedata[0xe9] && current.savedata[0xe9] > 1) {
+		print("Splitting because completed shortcut task");
+		return true;
+	} else if(settings["tutorial"] && current.savedata[0xe8] != old.savedata[0xe8] && current.savedata[0xe8] == 3) {
 		print("Splitting after tutorial");
-		vars.tutorial = 1;
 		return true;
 	}
 }
@@ -206,7 +195,6 @@ reset
 		vars.splitAt = 0;
 		vars.started = 0;
 		vars.shortcuts = 0;
-		vars.tutorial = 0;
 		return true;
 	}
 }
@@ -271,11 +259,10 @@ update
 		vars.splitAt = 0;
 		vars.started = 0;
 		vars.shortcuts = 0;
-		vars.tutorial = 0;
 	}
 	// debug
-	if(current.screen != old.screen || current.trans != old.trans || current.ingame != old.ingame || current.playing != old.playing || current.pause != old.pause || current.world != old.world || current.level != old.level) {
-		print("frame: "+current.counter+" igt: "+current.igt+" screen: "+current.screen+" trans: "+current.trans+" ingame: "+current.ingame+" playing: "+current.playing+" pause: "+current.pause+" world: "+current.world+" level: "+current.level+" load time: "+vars.loadtime/1000.0); 
+	if(current.screen != old.screen || current.trans != old.trans || current.ingame != old.ingame || current.playing != old.playing || current.pause != old.pause || current.world != old.world || current.level != old.level || current.savedata[0xe8] != old.savedata[0xe8] || current.savedata[0xe2] != old.savedata[0xe2]) {
+		print("frame: "+current.counter+" igt: "+current.igt+" screen: "+current.screen+" trans: "+current.trans+" ingame: "+current.ingame+" playing: "+current.playing+" pause: "+current.pause+" world: "+current.world+" level: "+current.level+" shortcut: "+current.savedata[0xe9]+" progress: "+current.savedata[0xe8]+" load time: "+vars.loadtime/1000.0); 
 	}
 }
 
