@@ -81,6 +81,8 @@ init
   vars.splitAt = 0;
   vars.shortcuts = 0;
   vars.webhookUrl = Environment.GetEnvironmentVariable("WEBHOOK_URL");
+  vars.webhookAt = 0;
+  vars.world = 0;
 }
 
 start
@@ -102,6 +104,8 @@ start
     vars.splitAt = 0;
     vars.shortcuts = 0;
     vars.started = current.counter;
+    vars.webhookAt = 0;
+    vars.world = 0;
     return true;
   }
 }
@@ -156,6 +160,8 @@ reset
     vars.splitAt = 0;
     vars.started = 0;
     vars.shortcuts = 0;
+    vars.webhookAt = 0;
+    vars.world = 0;
     return true;
   }
 }
@@ -210,7 +216,7 @@ update
     print("Setting delayed split because new world ("+old.world+"->"+current.world+") at "+(current.counter+1).ToString());
     vars.splitAt = current.counter+1;
   }*/
-  if ((settings["rstitle"] && current.screen == 3 && old.screen != 3)
+  if((settings["rstitle"] && current.screen == 3 && old.screen != 3)
     || (settings["rsmenu"] && current.screen == 4 && old.screen != 4)) {
     print("Clearing state because of reset condition");
     vars.paused = 0;
@@ -221,39 +227,47 @@ update
     vars.started = 0;
     vars.shortcuts = 0;
   }
+  if(current.screen == 12) {
+    vars.world = current.world;
+  }
   // debug
   if(current.screen != old.screen || current.trans != old.trans || current.ingame != old.ingame || current.playing != old.playing || current.pause != old.pause || current.world != old.world || current.level != old.level || current.savedata[0xe8] != old.savedata[0xe8] || current.savedata[0xe2] != old.savedata[0xe2] || current.savedata[0xe9] != old.savedata[0xe9] || current.bombs != old.bombs || current.ropes != old.ropes || current.health != old.health) {
     print("frame: "+current.counter+" igt: "+current.igt+" screen: "+current.screen+" trans: "+current.trans+" ingame: "+current.ingame+" playing: "+current.playing+" pause: "+current.pause+" world: "+current.world+" level: "+current.level+" shortcut: "+current.savedata[0xe9]+" progress: "+current.savedata[0xe8]+" load time: "+vars.loadtime/1000.0);
     if(settings["webhook"] && vars.webhookUrl != null) {
-      print("Using webhook: "+vars.webhookUrl);
-      var post = "user="+Environment.GetEnvironmentVariable("username")
-        +"&char="+current.savedata[0x2a78].ToString()
-        +"&health="+current.health.ToString()
-        +"&bombs="+current.bombs.ToString()
-        +"&ropes="+current.ropes.ToString()
-        +"&level[]="+(current.screen >= 12?current.world.ToString():0)
-        +"&level[]="+(current.screen >= 12?current.level.ToString():0)
-        +"&record[]="+(current.savedata[0x4ac].ToString())
-        +"&record[]="+(current.savedata[0x4ad].ToString())
-        +"&shortcuts="+(current.savedata[0xe9] > 1?current.savedata[0xe9]-1:0).ToString()
-        +"&tries="+System.BitConverter.ToInt32(current.savedata, 0x48c).ToString()
-        +"&deaths="+System.BitConverter.ToInt32(current.savedata, 0x490).ToString()
-        +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x494).ToString()
-        +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x498).ToString()
-        +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x49c).ToString()
-        +"&gt="+timer.CurrentTime.GameTime.Value.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)
-        +"&rt="+timer.CurrentTime.RealTime.Value.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
-      byte[] bytes = Encoding.ASCII.GetBytes(post);
-      System.Net.WebRequest req = System.Net.WebRequest.Create(vars.webhookUrl);
-      req.Method = "POST";
-      req.ContentType = "application/x-www-form-urlencoded";
-      Stream dataStream = req.GetRequestStream();
-      dataStream.Write(bytes, 0, bytes.Length);
-      dataStream.Close();
-      print("Posting "+vars.webhookUrl+"?"+post);
-      System.Net.WebResponse res = req.GetResponse();
-      print(((System.Net.HttpWebResponse)res).StatusDescription);
+        vars.webhookAt = current.counter+10;
     }
+  }
+  if(vars.webhookAt > 0 && current.counter >= vars.webhookAt) {
+    vars.webhookAt = 0;
+    print("Using webhook: "+vars.webhookUrl);
+    var post = "user="+Environment.GetEnvironmentVariable("username")
+      +"&char="+current.savedata[0x2a78].ToString()
+      +"&health="+current.health.ToString()
+      +"&bombs="+current.bombs.ToString()
+      +"&ropes="+current.ropes.ToString()
+      +"&level[]="+(current.screen >= 12?vars.world.ToString():0)
+      +"&level[]="+(current.screen >= 12?current.level.ToString():0)
+      +"&record[]="+(current.savedata[0x4ac].ToString())
+      +"&record[]="+(current.savedata[0x4ad].ToString())
+      +"&shortcuts="+(current.savedata[0xe9] > 1?current.savedata[0xe9]-1:0).ToString()
+      +"&tries="+System.BitConverter.ToInt32(current.savedata, 0x48c).ToString()
+      +"&deaths="+System.BitConverter.ToInt32(current.savedata, 0x490).ToString()
+      +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x494).ToString()
+      +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x498).ToString()
+      +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x49c).ToString()
+      +"&gt="+timer.CurrentTime.GameTime.Value.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)
+      +"&rt="+timer.CurrentTime.RealTime.Value.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)
+      +"&bt="+(System.BitConverter.ToInt32(current.savedata, 0x2894)/60.0).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    byte[] bytes = Encoding.ASCII.GetBytes(post);
+    System.Net.WebRequest req = System.Net.WebRequest.Create(vars.webhookUrl);
+    req.Method = "POST";
+    req.ContentType = "application/x-www-form-urlencoded";
+    Stream dataStream = req.GetRequestStream();
+    dataStream.Write(bytes, 0, bytes.Length);
+    dataStream.Close();
+    print("Posting "+vars.webhookUrl+"?"+post);
+    System.Net.WebResponse res = req.GetResponse();
+    print(((System.Net.HttpWebResponse)res).StatusDescription);
   }
 }
 
