@@ -80,6 +80,7 @@ init
   vars.totaltime = 0;
   vars.splitAt = 0;
   vars.shortcuts = 0;
+  vars.webhookUrl = Environment.GetEnvironmentVariable("WEBHOOK_URL");
 }
 
 start
@@ -223,9 +224,8 @@ update
   // debug
   if(current.screen != old.screen || current.trans != old.trans || current.ingame != old.ingame || current.playing != old.playing || current.pause != old.pause || current.world != old.world || current.level != old.level || current.savedata[0xe8] != old.savedata[0xe8] || current.savedata[0xe2] != old.savedata[0xe2] || current.savedata[0xe9] != old.savedata[0xe9] || current.bombs != old.bombs || current.ropes != old.ropes || current.health != old.health) {
     print("frame: "+current.counter+" igt: "+current.igt+" screen: "+current.screen+" trans: "+current.trans+" ingame: "+current.ingame+" playing: "+current.playing+" pause: "+current.pause+" world: "+current.world+" level: "+current.level+" shortcut: "+current.savedata[0xe9]+" progress: "+current.savedata[0xe8]+" load time: "+vars.loadtime/1000.0);
-    if(settings["webhook"] && Environment.GetEnvironmentVariable("WEBHOOK_URL") != null) {
-      string webhookUrl = Environment.GetEnvironmentVariable("WEBHOOK_URL");
-      print("Using webhook: "+webhookUrl);
+    if(settings["webhook"] && vars.webhookUrl != null) {
+      print("Using webhook: "+vars.webhookUrl);
       var post = "user="+Environment.GetEnvironmentVariable("username")
         +"&char="+current.savedata[0x2a78].ToString()
         +"&health="+current.health.ToString()
@@ -242,13 +242,13 @@ update
         +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x498).ToString()
         +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x49c).ToString();
       byte[] bytes = Encoding.ASCII.GetBytes(post);
-      System.Net.WebRequest req = System.Net.WebRequest.Create(webhookUrl);
+      System.Net.WebRequest req = System.Net.WebRequest.Create(vars.webhookUrl);
       req.Method = "POST";
       req.ContentType = "application/x-www-form-urlencoded";
       Stream dataStream = req.GetRequestStream();
       dataStream.Write(bytes, 0, bytes.Length);
       dataStream.Close();
-      print("Posting "+webhookUrl+"?"+post);
+      print("Posting "+vars.webhookUrl+"?"+post);
       System.Net.WebResponse res = req.GetResponse();
       print(((System.Net.HttpWebResponse)res).StatusDescription);
     }
