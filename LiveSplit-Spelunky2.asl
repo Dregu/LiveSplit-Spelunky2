@@ -61,7 +61,7 @@ startup
 
   settings.Add("misc", true, "Miscellaneous");
   settings.Add("pause", true, "Keep ingame timers running when paused instead of updating on level change (just a visual thing during levels, doesn't change the split times or total time)", "misc");
-  settings.Add("webhook", false, "Enable webhook");
+  settings.Add("webhook", false, "Enable webhook", "misc");
 }
 
 
