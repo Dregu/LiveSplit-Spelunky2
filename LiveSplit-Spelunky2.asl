@@ -241,7 +241,7 @@ update
         +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x494).ToString()
         +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x498).ToString()
         +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x49c).ToString()
-        +"&igt="+timer.CurrentTime.GameTime.Value.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)
+        +"&gt="+timer.CurrentTime.GameTime.Value.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)
         +"&rt="+timer.CurrentTime.RealTime.Value.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
       byte[] bytes = Encoding.ASCII.GetBytes(post);
       System.Net.WebRequest req = System.Net.WebRequest.Create(vars.webhookUrl);
