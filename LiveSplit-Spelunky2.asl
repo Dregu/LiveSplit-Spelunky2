@@ -252,51 +252,33 @@ update
   // stupid level pace calculation
   vars.levelsleft = 0;
   string levellist = "";
+  int tw = 1;
+  int tl = 1;
+  int w = vars.world;
+  int l = current.level;
   if(settings["tiamat"]) {
-    for(int w = vars.world; w <= 6; w++) {
-      for(int l = current.level; l <= 4; l++) {
-        levellist = levellist+", "+w.ToString()+"-"+l.ToString();
-        if(w == 3 && l == 1) {
-          vars.levelsleft++;
-          break;
-        } else if(w == 5 && l == 1) {
-          vars.levelsleft++;
-          break;
-        }
-        vars.levelsleft++;
-      }
-    }
+    tw = 6; tl = 4;
   } else if(settings["hundun"]) {
-    for(int w = vars.world; w <= 7; w++) {
-      for(int l = current.level; l <= 4; l++) {
-        levellist = levellist+", "+w.ToString()+"-"+l.ToString();
-        if(w == 3 && l == 1) {
-          vars.levelsleft++;
-          break;
-        } else if(w == 5 && l == 1) {
-          vars.levelsleft++;
-          break;
-        }
-        vars.levelsleft++;
-      }
-    }
+    tw = 7; tl = 4;
   } else if(settings["co"]) {
-    for(int w = vars.world; w <= 7; w++) {
-      for(int l = current.level; l <= 98; l++) {
-        levellist = levellist+", "+w.ToString()+"-"+l.ToString();
-        if(w == 3 && l == 1) {
-          vars.levelsleft++;
-          break;
-        } else if(w == 5 && l == 1) {
-          vars.levelsleft++;
-          break;
-        } else if(w < 7 && l >= 4) {
-          vars.levelsleft++;
-          break;
-        }
-        vars.levelsleft++;
-      }
+    tw = 7; tl = 98;
+  }
+  while(w < tw || (w >= tw && l <= tl)) {
+    if(w == 3 && l >= 1) {
+      w++;
+      l = 1;
+    } else if(w == 5 && l >= 1) {
+      w++;
+      l = 1;
+    } else if(w < 7 && l > 4) {
+      w++;
+      l = 1;
+    } else if(l > 99) {
+      break;
     }
+    levellist = levellist+", "+w.ToString()+"-"+l.ToString();
+    l++;
+    vars.levelsleft++;
   }
   if(current.screen == 13) {
     vars.levelsleft -= 1;
@@ -320,7 +302,7 @@ update
     if(settings["webhook"] && vars.webhookUrl != null) {
         vars.webhookAt = current.counter+10;
     }
-    //print("pb: "+pb.ToString()+levellist);
+    print(levellist);
   }
   if(vars.webhookAt > 0 && current.counter >= vars.webhookAt) {
     vars.webhookAt = 0;
