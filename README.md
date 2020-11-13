@@ -11,3 +11,4 @@ The autosplitter supports tracking the average time per level needed to PB. The 
 The level pace doesn't need actual splits for every level! Here's an example Cosmic Ocean setup with splits on world transitions only. First you need to extract the [ASLVarViewer](https://github.com/hawkerm/LiveSplit.ASLVarViewer/releases/latest) component to your LiveSplit\Components directory and set it up like so:
 ![ASLVarViewer setup](https://cdn.discordapp.com/attachments/756241793753809106/776845172373192754/unknown.png)
 ![CO setup](https://cdn.discordapp.com/attachments/756241793753809106/776849296162422804/unknown.png)
+![Done](https://cdn.discordapp.com/attachments/762462481963548682/776880866118729768/unknown.png)
