@@ -292,7 +292,11 @@ update
     double timeleftaverage = pb / vars.levelsleft;
     TimeSpan average = TimeSpan.FromSeconds(timeleftaverage);
     TimeSpan left = TimeSpan.FromSeconds(timeleftaverage-(timer.CurrentTime.GameTime.Value.TotalSeconds-vars.levelstarted));
-    vars.pace = (left < TimeSpan.FromSeconds(0)?"+":"-")+string.Format("{0:D1}:{1:D2} / {2:D1}:{3:D2}", Math.Abs(left.Minutes), Math.Abs(left.Seconds), average.Minutes, average.Seconds);
+    if(average.Hours > 0) {
+      vars.pace = (left < TimeSpan.FromSeconds(0)?"+":"-")+string.Format("{0:D1}:{1:D2}:{2:D2} / {3:D1}:{4:D2}:{5:D2}", Math.Abs(left.Hours), Math.Abs(left.Minutes), Math.Abs(left.Seconds), average.Hours, average.Minutes, average.Seconds);
+    } else {
+      vars.pace = (left < TimeSpan.FromSeconds(0)?"+":"-")+string.Format("{0:D1}:{1:D2} / {2:D1}:{3:D2}", Math.Abs(left.Minutes), Math.Abs(left.Seconds), average.Minutes, average.Seconds);
+    }
   }
 
   // debug
