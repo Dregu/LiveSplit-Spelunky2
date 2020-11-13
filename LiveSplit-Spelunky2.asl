@@ -2,6 +2,9 @@
  * Spelunky 2 autosplitter for LiveSplit by Dregu
  * Remember to set LiveSplit to Compare Against -> Game Time
  * and check the ASL settings for the right category options.
+ *
+ * You can set the racehud webhook url where to push status updates to by running
+ * setx LIVESPLIT_WEBHOOK_URL http://localhost:2222/Runnername/password
  */
 
 state("Spel2")
@@ -80,7 +83,7 @@ init
   vars.totaltime = 0;
   vars.splitAt = 0;
   vars.shortcuts = 0;
-  vars.webhookUrl = Environment.GetEnvironmentVariable("WEBHOOK_URL");
+  vars.webhookUrl = Environment.GetEnvironmentVariable("LIVESPLIT_WEBHOOK_URL", EnvironmentVariableTarget.User);
   vars.webhookAt = 0;
   vars.world = 0;
 }
@@ -104,6 +107,7 @@ start
     vars.splitAt = 0;
     vars.shortcuts = 0;
     vars.started = current.counter;
+    vars.webhookUrl = Environment.GetEnvironmentVariable("LIVESPLIT_WEBHOOK_URL", EnvironmentVariableTarget.User);
     vars.webhookAt = 0;
     vars.world = 0;
     return true;
@@ -233,6 +237,7 @@ update
   // debug
   if(current.screen != old.screen || current.trans != old.trans || current.ingame != old.ingame || current.playing != old.playing || current.pause != old.pause || current.world != old.world || current.level != old.level || current.savedata[0xe8] != old.savedata[0xe8] || current.savedata[0xe2] != old.savedata[0xe2] || current.savedata[0xe9] != old.savedata[0xe9] || current.bombs != old.bombs || current.ropes != old.ropes || current.health != old.health) {
     print("frame: "+current.counter+" igt: "+current.igt+" screen: "+current.screen+" trans: "+current.trans+" ingame: "+current.ingame+" playing: "+current.playing+" pause: "+current.pause+" world: "+current.world+" level: "+current.level+" shortcut: "+current.savedata[0xe9]+" progress: "+current.savedata[0xe8]+" load time: "+vars.loadtime/1000.0);
+    vars.webhookUrl = Environment.GetEnvironmentVariable("LIVESPLIT_WEBHOOK_URL", EnvironmentVariableTarget.User);
     if(settings["webhook"] && vars.webhookUrl != null) {
         vars.webhookAt = current.counter+10;
     }
@@ -259,8 +264,10 @@ update
       +"&rt="+timer.CurrentTime.RealTime.Value.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)
       +"&bigt="+(System.BitConverter.ToInt32(current.savedata, 0x2894)/60.0).ToString(System.Globalization.CultureInfo.InvariantCulture)
       +"&phase="+timer.CurrentPhase
-      +"&split="+timer.CurrentSplitIndex
-      +"&splits="+timer.Run.Count;
+      +"&splitindex="+timer.CurrentSplitIndex
+      +"&splits="+timer.Run.Count
+      +"&splittime="+(timer.CurrentSplitIndex < timer.Run.Count && timer.CurrentSplitIndex >= 0 && timer.Run[timer.CurrentSplitIndex].PersonalBestSplitTime.GameTime.HasValue ? (timer.Run[timer.CurrentSplitIndex].PersonalBestSplitTime.GameTime.Value).TotalSeconds : 0).ToString(System.Globalization.CultureInfo.InvariantCulture)
+      +"&lastsplittime="+(timer.Run[timer.Run.Count-1].PersonalBestSplitTime.GameTime.HasValue ? (timer.Run[timer.Run.Count-1].PersonalBestSplitTime.GameTime.Value).TotalSeconds : 0).ToString(System.Globalization.CultureInfo.InvariantCulture);
     byte[] bytes = Encoding.ASCII.GetBytes(post);
     System.Net.WebRequest req = System.Net.WebRequest.Create(vars.webhookUrl);
     req.Method = "POST";

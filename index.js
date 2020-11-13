@@ -22,7 +22,7 @@ const broadcast = (status) => {
 }
 
 app.post('/:user/:pass', (req, res) => {
-  if(req.params.pass != nconf.get('pass')) {
+  if(req.params.pass != nconf.get('pass') && nconf.get('pass')) {
     res.sendStatus(403)
     return
   }

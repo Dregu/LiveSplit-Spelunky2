@@ -175,8 +175,10 @@ const updateRanks = () => {
 const tick = () => {
   updateRanks()
   for(let [user, item] of Object.entries(state)) {
-    state[user].gt = 1.0+state[user].gt
-    state[user].rt = 1.0+state[user].rt
+    if(state[user].phase == 'Running') {
+      state[user].gt = 1.0+state[user].gt
+      state[user].rt = 1.0+state[user].rt
+    }
     updateHud(state[user])
   }
 }
