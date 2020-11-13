@@ -2,46 +2,18 @@ const express = require('express')
 const bodyParser = require('body-parser')
 var app = express()
 const expressWs = require('express-ws')(app)
+const nconf = require('nconf')
+
+nconf.file({ file: 'config.json' })
+if(!nconf.get('pass')) {
+  nconf.set('pass', 'tiamat')
+  nconf.save()
+}
 
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(express.static('static'))
 
 var state = {}
-
-/*var state = {
-  'Dregu': {
-    user: 'Dregu',
-    char: '0',
-    health: '4',
-    bombs: '7',
-    ropes: '4',
-    level: [ '1', '2' ],
-    record: [ '5', '1' ],
-    shortcuts: '2',
-    tries: '16',
-    deaths: '10',
-    wins: [ '0', '0', '0' ],
-    gt: '123',
-    rt: '4562.7'
-  },
-  'foobar': {
-    user: 'foobar',
-    char: '7',
-    health: '99',
-    bombs: '22',
-    ropes: '45',
-    level: [ '5', '1' ],
-    record: [ '7', '95' ],
-    shortcuts: '6',
-    tries: '420',
-    deaths: '333',
-    wins: [ '2', '1', '0' ],
-    gt: '222',
-    rt: '555.5'
-  }
-}*/
-
-console.log(state)
 
 const broadcast = (status) => {
   for(let client of expressWs.getWss().clients) {
@@ -49,10 +21,44 @@ const broadcast = (status) => {
   }
 }
 
-app.post('/', (req, res) => {
+app.post('/:user/:pass', (req, res) => {
+  if(req.params.pass != nconf.get('pass')) {
+    res.sendStatus(403)
+    return
+  }
   res.sendStatus(200)
-  console.log(req.body)
   var status = req.body
+  status['user'] = req.params.user
+  status = Object.entries(status).reduce((acc, [key, value]) => {
+    acc[key] = isNaN(+value) ? value : +value
+    return acc
+  },{})
+  status.level = Object.entries(status.level).reduce((acc, [key, value]) => {
+    acc[key] = isNaN(+value) ? value : +value
+    return acc
+  },{})
+  status.record = Object.entries(status.record).reduce((acc, [key, value]) => {
+    acc[key] = isNaN(+value) ? value : +value
+    return acc
+  },{})
+  status.wins = Object.entries(status.wins).reduce((acc, [key, value]) => {
+    acc[key] = isNaN(+value) ? value : +value
+    return acc
+  },{})
+  if(status.phase == 'Ended') {
+    let bgt = nconf.get('users:'+req.params.user+':bgt')
+    let brt = nconf.get('users:'+req.params.user+':brt')
+    if(bgt == undefined || bgt <= 0 || bgt > status.gt) {
+      nconf.set('users:'+req.params.user+':bgt', status.gt)
+      nconf.save()
+    } else if(brt == undefined || brt <= 0 || brt > status.rt) {
+      nconf.set('users:'+req.params.user+':brt', status.rt)
+      nconf.save()
+    }
+  }
+  status['bgt'] = nconf.get('users:'+req.params.user+':bgt') || -1/60
+  status['brt'] = nconf.get('users:'+req.params.user+':brt') || -1/60
+  console.log(status)
   state[status['user']] = status
   broadcast(status)
 })

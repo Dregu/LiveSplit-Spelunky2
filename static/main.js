@@ -1,6 +1,5 @@
 const container = document.getElementById('container')
 var state = {}
-var rank = []
 const user = window.location.pathname.split('/').slice(-1)[0]
 const _colors = ['yellow', 'magenta', 'cyan', 'black', 'cinnabar', 'green', 'olive', 'white', 'cerulean', 'blue', 'lime', 'lemon', 'iris', 'gold', 'red', 'pink', 'violet', 'gray', 'khaki', 'orange']
 const _items = {
@@ -10,11 +9,13 @@ const _items = {
   bomb: { file: 'hud.png', x: 128, y: 64, w: 64, h: 64 },
   rope: { file: 'hud.png', x: 192, y: 64, w: 64, h: 64 },
   level: { file: 'hud.png', x: 384, y: 64, w: 64, h: 64 },
+  record: { file: 'menu_deathmatch2.png', x: 1024, y: 128, w: 64, h: 64 },
   time: { file: 'hud.png', x: 320, y: 64-12, w: 64, h: 64 },
-  record: { file: 'menu_deathmatch2.png', x: 768, y: 128, w: 64, h: 64 },
+  best: { file: 'hud.png', x: 384, y: 128, w: 64, h: 64 },
   shortcut: { file: 'deco_basecamp.png', x: 256, y: 1664, w: 128, h: 128 },
+  attempt: { file: 'menu_deathmatch2.png', x: 768, y: 128, w: 64, h: 64 },
   win: { file: 'menu_deathmatch2.png', x: 960, y: 128, w: 64, h: 64 },
-  best: { file: 'hud.png', x: 384, y: 128, w: 64, h: 64 }
+  death: { file: 'items.png', x: 1920, y: 380, w: 128, h: 128 },
 }
 const getHud = (user) => {
   let hud = document.querySelector('.hud[data-user="'+user+'"]')
@@ -41,13 +42,19 @@ const getHud = (user) => {
   }
   return hud
 }
+const formatTime = (time) => {
+  let gt = new Date(0)
+  gt.setSeconds(time)
+  gt = gt.toISOString().substr(11, 8)
+  return gt
+}
 const updateHud = (data) => {
   if(user && user != data['user']) {
     return
   }
   let hud = getHud(data['user'])
-  if(!user) {
-    hud.style.top = 128*getRank(data['user'])+'px'
+  if(!user && data['rank'] !== undefined) {
+    hud.style.top = 128*data['rank']+'px'
   }
   let items = {}
   for(const [name, item] of Object.entries(_items)) {
@@ -58,10 +65,12 @@ const updateHud = (data) => {
   items['health'].firstChild.innerText = data['health']
   items['bomb'].firstChild.innerText = data['bombs']
   items['rope'].firstChild.innerText = data['ropes']
-  items['level'].firstChild.innerText = data['level'][0].replace('8','7')+'–'+data['level'][1]
-  items['record'].firstChild.innerText = data['record'][0].replace('8','7')+'–'+data['record'][1]
+  items['level'].firstChild.innerText = data['level'][0]+'–'+data['level'][1]
+  items['record'].firstChild.innerText = data['record'][0]+'–'+data['record'][1]
   items['shortcut'].firstChild.innerText = data['shortcuts']+'/9'
-  items['win'].firstChild.innerText = data['wins'].reduce((total, num) => { return parseInt(total) + parseInt(num) })
+  items['attempt'].firstChild.innerText = data['tries']
+  items['win'].firstChild.innerText = data['wins'][0]+data['wins'][1]+data['wins'][2]
+  items['death'].firstChild.innerText = data['deaths']
   if(data['health'] == 0) {
     items['dead'].style.display = 'block'
     items['char'].lastChild.style.backgroundPositionX = '-1152px'
@@ -69,17 +78,14 @@ const updateHud = (data) => {
     items['dead'].style.display = 'none'
     items['char'].lastChild.style.backgroundPositionX = '0px'
   }
-  let gt = new Date(0)
-  gt.setSeconds(data['gt'])
-  gt = gt.toISOString().substr(11, 8)
-  let rt = new Date(0)
-  rt.setSeconds(data['rt'])
-  rt = rt.toISOString().substr(11, 8)
-  let bt = new Date(0)
-  bt.setSeconds(data['bt'])
-  bt = bt.toISOString().substr(11, 8)
-  items['time'].firstChild.innerText = gt
-  items['best'].firstChild.innerText = bt
+  let igt = formatTime(data['igt'])
+  let gt = formatTime(data['gt'])
+  let rt = formatTime(data['rt'])
+  let bigt = formatTime(data['bigt'])
+  let bgt = formatTime(data['bgt'])
+  let brt = formatTime(data['brt'])
+  items['time'].firstChild.innerText = (data['gt'] > 0?gt:'')
+  items['best'].firstChild.innerText = (data['bgt'] > 0?bgt:'')
   let hsl = getHsl(_colors[data['char']])
   items['health'].lastChild.style.filter = 'brightness('+(parseInt(hsl[2])*0.5+33)+'%) sepia(100%) hue-rotate('+(parseInt(hsl[0])-45)+'deg) saturate('+(parseInt(hsl[1])*3)+'%)'
 }
@@ -120,7 +126,8 @@ const getHsl = (color) => {
     'lemon': 'lemonchiffon',
     'cerulean': 'skyblue',
     'violet': 'indigo',
-    'blue': 'mediumblue'
+    'blue': 'mediumblue',
+    'olive': 'olivedrab'
   }
   if(htmlcolors[color]) {
     color = htmlcolors[color]
@@ -138,55 +145,62 @@ const shuffle = (array) => {
   }
   return array
 }
-
+const cmp = (x, y) => {
+  return x > y ? 1 : x < y ? -1 : 0
+}
+const sortLevel = (level) => {
+  return 100*level[0]+1*level[1]
+}
+const sortTime = (time) => {
+  if(time < 0) {
+    return Number.MAX_SAFE_INTEGER
+  }
+  return time
+}
 const updateRanks = () => {
   var users = []
   for(let [user, item] of Object.entries(state)) {
-    users.push(user)
+    users.push(item)
   }
-  rank = users.sort((a, b) => {
-    let sa = Math.max(100*state[a]['level'][0]+1*state[a]['level'][1], 100*state[a]['record'][0]+1*state[a]['record'][1])
-    let sb = Math.max(100*state[b]['level'][0]+1*state[b]['level'][1], 100*state[b]['record'][0]+1*state[b]['record'][1])
-    return sa > sb
-  }).reverse()
-}
-const getRank = (user) => {
-  for(let i = 0; i < rank.length; i++) {
-    if(rank[i] == user) {
-      return i
-    }
+  users = users.sort((a, b) => {
+    return cmp(
+      [cmp(sortTime(a.bgt), sortTime(b.bgt)), -cmp(a.shortcuts, b.shortcuts), -cmp(Math.max(sortLevel(a.level), sortLevel(a.record)), Math.max(sortLevel(b.level), sortLevel(b.record)))],
+      [cmp(sortTime(b.bgt), sortTime(a.bgt)), -cmp(b.shortcuts, a.shortcuts), -cmp(Math.max(sortLevel(b.level), sortLevel(b.record)), Math.max(sortLevel(a.level), sortLevel(a.record)))]
+    )
+  })
+  for(let i = 0; i < users.length; i++) {
+    users[i]['rank'] = i
   }
-  return 0
 }
 const tick = () => {
   updateRanks()
   for(let [user, item] of Object.entries(state)) {
-    state[user].gt = (parseFloat(state[user].gt)+1.0).toString()
-    state[user].rt = (parseFloat(state[user].rt)+1.0).toString()
+    state[user].gt = 1.0+state[user].gt
+    state[user].rt = 1.0+state[user].rt
     updateHud(state[user])
   }
 }
 const init = () => {
   var ws = connect()
-  if(user) {
-    getHud(user)
-  }
   for(let i = 0; i < 7; i++) {
     var foo = {
       user: 'player'+i,
       char: i,
-      health: Math.floor(Math.random()*12).toString(),
-      bombs: Math.floor(Math.random()*12).toString(),
-      ropes: Math.floor(Math.random()*12).toString(),
-      level: [ Math.floor(1+Math.random()*2).toString(), Math.floor(1+Math.random()*4).toString() ],
-      record: [ Math.floor(1+Math.random()*2).toString(), Math.floor(1+Math.random()*4).toString() ],
-      shortcuts: Math.floor(Math.random()*9).toString(),
-      tries: Math.floor(Math.random()*500).toString(),
-      deaths: Math.floor(Math.random()*300).toString(),
-      wins: [ Math.floor(Math.random()*8).toString(), '0', '0' ],
-      gt: Math.floor(Math.random()*500).toString(),
-      rt: Math.floor(Math.random()*500).toString(),
-      bt: Math.floor(Math.random()*500).toString()
+      health: Math.floor(Math.random()*12),
+      bombs: Math.floor(Math.random()*12),
+      ropes: Math.floor(Math.random()*12),
+      level: { 0: Math.floor(1+Math.random()*2), 1: Math.floor(1+Math.random()*4) },
+      record: { 0: Math.floor(1+Math.random()*2), 1: Math.floor(1+Math.random()*4) },
+      shortcuts: Math.floor(Math.random()*9),
+      tries: Math.floor(Math.random()*500),
+      deaths: Math.floor(Math.random()*300),
+      wins: [ Math.floor(Math.random()*8), Math.floor(Math.random()*3), Math.floor(Math.random()*2) ],
+      igt: Math.floor(Math.random()*500),
+      gt: Math.floor(Math.random()*500),
+      rt: Math.floor(Math.random()*500),
+      bigt: Math.random()<0.7?-0.0166666667:Math.floor(Math.random()*500),
+      bgt: Math.random()<0.7?-0.0166666667:Math.floor(Math.random()*500),
+      brt: Math.random()<0.7?-0.0166666667:Math.floor(Math.random()*500),
     }
     state['player'+i] = foo
     updateHud(foo)

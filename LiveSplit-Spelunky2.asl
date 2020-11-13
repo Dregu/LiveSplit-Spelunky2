@@ -240,8 +240,7 @@ update
   if(vars.webhookAt > 0 && current.counter >= vars.webhookAt) {
     vars.webhookAt = 0;
     print("Using webhook: "+vars.webhookUrl);
-    var post = "user="+Environment.GetEnvironmentVariable("username")
-      +"&char="+current.savedata[0x2a78].ToString()
+    var post = "char="+current.savedata[0x2a78].ToString()
       +"&health="+current.health.ToString()
       +"&bombs="+current.bombs.ToString()
       +"&ropes="+current.ropes.ToString()
@@ -255,9 +254,13 @@ update
       +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x494).ToString()
       +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x498).ToString()
       +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x49c).ToString()
+      +"&igt="+(current.igt/60.0).ToString(System.Globalization.CultureInfo.InvariantCulture)
       +"&gt="+timer.CurrentTime.GameTime.Value.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)
       +"&rt="+timer.CurrentTime.RealTime.Value.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)
-      +"&bt="+(System.BitConverter.ToInt32(current.savedata, 0x2894)/60.0).ToString(System.Globalization.CultureInfo.InvariantCulture);
+      +"&bigt="+(System.BitConverter.ToInt32(current.savedata, 0x2894)/60.0).ToString(System.Globalization.CultureInfo.InvariantCulture)
+      +"&phase="+timer.CurrentPhase
+      +"&split="+timer.CurrentSplitIndex
+      +"&splits="+timer.Run.Count;
     byte[] bytes = Encoding.ASCII.GetBytes(post);
     System.Net.WebRequest req = System.Net.WebRequest.Create(vars.webhookUrl);
     req.Method = "POST";

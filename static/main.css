@@ -6,7 +6,7 @@
 }
 body, html {
   background: rgba(0,0,0,0);
-  background: #333;
+  background: #222222;
 }
 #container {
   position: relative;
@@ -61,7 +61,7 @@ body, html {
 .health, .bomb, .rope {
   text-align: right;
 }
-.record .img, .win .img {
+.record .img, .win .img, .attempt .img {
   top: 10px;
   transform: scale(0.60);
   left: 0px;
@@ -71,6 +71,11 @@ body, html {
   transform: scale(0.33);
   left: -30px;
 }
+.death .img {
+  top: 40px;
+  transform: scale(0.5);
+  left: -30px;
+}
 .dead {
   margin-left: -80px;
   display: none;
@@ -78,13 +83,13 @@ body, html {
 .level, .record {
   margin-right: 48px;
 }
-.win {
-  margin-right: 20px;
+.attempt {
+  margin-right: 32px;
 }
 .shortcut {
   margin-right: -20px;
 }
-.time {
+.time, .best {
   margin-right: 128px;
 }
 .level .img, .best .img {
