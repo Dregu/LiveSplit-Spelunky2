@@ -99,8 +99,8 @@ start
   if(current.screen <= 3) {
     return;
   }
-  if ((settings["stlevel"] && current.playing && current.igt > 1 && old.igt == 1)
-  || (settings["stcamp"] && current.ingame && !old.ingame && current.pause == 0 && vars.started == 0)) {
+  if ((settings["stlevel"] && current.playing && current.igt > 1 && old.igt == 1 && current.screen == 12)
+  || (settings["stcamp"] && current.ingame && !old.ingame && current.pause == 0 && vars.started == 0 && current.screen == 11)) {
     print("Starting timer");
     vars.paused = 0;
     vars.pausetime = 0;
