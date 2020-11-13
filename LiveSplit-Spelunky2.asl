@@ -264,10 +264,10 @@ update
     tw = 7; tl = 98;
   }
   while(w < tw || (w >= tw && l <= tl)) {
-    if(w == 3 && l >= 1) {
+    if(w == 3 && l > 1) {
       w++;
       l = 1;
-    } else if(w == 5 && l >= 1) {
+    } else if(w == 5 && l > 1) {
       w++;
       l = 1;
     } else if(w < 7 && l > 4) {
