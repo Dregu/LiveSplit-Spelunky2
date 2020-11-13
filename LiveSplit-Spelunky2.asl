@@ -116,6 +116,9 @@ start
     vars.pace = "";
     vars.levelsleft = 0;
     vars.levelstarted = 0.0;
+    if(settings["webhook"] && vars.webhookUrl != null) {
+      vars.webhookAt = current.counter+10;
+    }
     return true;
   }
 }
@@ -175,6 +178,9 @@ reset
     vars.pace = "";
     vars.levelsleft = 0;
     vars.levelstarted = 0.0;
+    if(settings["webhook"] && vars.webhookUrl != null) {
+      vars.webhookAt = current.counter+10;
+    }
     return true;
   }
 }

@@ -4,9 +4,8 @@
   box-sizing: border-box;
   margin: -1px;
 }
-body, html {
-  background: rgba(0,0,0,0);
-  background: #222222;
+body {
+  background-color: #222222;
 }
 #container {
   position: relative;
@@ -110,7 +109,7 @@ body, html {
   to { background-position: -1408px -1152px; }
 }
 .char.die .img {
-  animation: die 0.4s steps(1);
+  animation: die 0.33s steps(1);
   animation-fill-mode: forwards;
 }
 @keyframes die {

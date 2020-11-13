@@ -61,7 +61,7 @@ const updateHud = (data) => {
     items[name] = hud.querySelector('.'+name)
   }
   items['char'].lastChild.style.backgroundImage = 'url(/img/char_'+_colors[data['char']]+'.png)'
-  items['char'].firstChild.innerText = (Object.keys(state).length > 1?'#'+(data['rank']+1)+' ':'')+data['user']
+  items['char'].firstChild.innerText = (Object.keys(state).length > 1?'#'+((data['rank']?data['rank']:0)+1)+' ':'')+data['user']
   items['health'].firstChild.innerText = data['health']
   items['bomb'].firstChild.innerText = data['bombs']
   items['rope'].firstChild.innerText = data['ropes']
@@ -112,10 +112,12 @@ const connect = () => {
     if(data['state']) {
       for(let [user, item] of Object.entries(data['state'])) {
         state[user] = item
+        updateRanks()
         updateHud(item)
       }
     } else if(data['update']) {
       state[data['update']['user']] = data['update']
+      updateRanks()
       updateHud(data['update'])
     }
   }
