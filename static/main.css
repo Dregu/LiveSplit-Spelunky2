@@ -14,7 +14,7 @@ body, html {
 .hud {
   position: absolute;
   left: 0;
-  transition: all 1s ease;
+  transition: top 1s ease;
   height: 128px;
   width: 100%;
   font-size: 32px;
@@ -58,11 +58,14 @@ body, html {
   bottom: auto;
   text-align: center;
 }
+.char .img {
+  top: 4px;
+}
 .health, .bomb, .rope {
   text-align: right;
 }
 .record .img, .win .img, .attempt .img {
-  top: 10px;
+  top: 12px;
   transform: scale(0.60);
   left: 0px;
 }
@@ -72,7 +75,7 @@ body, html {
   left: -30px;
 }
 .death .img {
-  top: 40px;
+  top: 42px;
   transform: scale(0.5);
   left: -30px;
 }
@@ -95,3 +98,41 @@ body, html {
 .level .img, .best .img {
   top: 13px;
 }
+.char.jump .img {
+  animation: jump2 0.33s steps(3) infinite alternate-reverse;
+}
+@keyframes jump {
+  from { background-position: 0px -1152px; }
+  to { background-position: -1024px -1152px; }
+}
+@keyframes jump2 {
+  from { background-position: -1024px -1152px; }
+  to { background-position: -1408px -1152px; }
+}
+.char.die .img {
+  animation: die 0.4s steps(1);
+  animation-fill-mode: forwards;
+}
+@keyframes die {
+  0%   { background-position: 0 -256px; }
+  25%  { background-position: -128px -256px; }
+  50%  { background-position: -256px -256px; }
+  75%  { background-position: -384px -256px; }
+  100% { background-position: -1152px 0; }
+}
+.char.wake .img {
+  animation: wake 0.3s steps(1);
+}
+@keyframes wake {
+  0%   { background-position: -256px -128px; }
+  33%  { background-position: -384px -128px; }
+  67%  { background-position: -512px -128px; }
+  100% { background-position: 0px 0px; }
+}
+.char.last .img {
+  background-position: -384px -1024px!important;
+}
+
+/*  from { background-position: 0 -256px; }
+  75% { background-position: -384px -256px; }
+  to { background-position: -1152px 0; }*/

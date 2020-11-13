@@ -61,7 +61,7 @@ const updateHud = (data) => {
     items[name] = hud.querySelector('.'+name)
   }
   items['char'].lastChild.style.backgroundImage = 'url(/img/char_'+_colors[data['char']]+'.png)'
-  items['char'].firstChild.innerText = data['user']
+  items['char'].firstChild.innerText = (Object.keys(state).length > 1?'#'+(data['rank']+1)+' ':'')+data['user']
   items['health'].firstChild.innerText = data['health']
   items['bomb'].firstChild.innerText = data['bombs']
   items['rope'].firstChild.innerText = data['ropes']
@@ -73,10 +73,24 @@ const updateHud = (data) => {
   items['death'].firstChild.innerText = data['deaths']
   if(data['health'] == 0) {
     items['dead'].style.display = 'block'
-    items['char'].lastChild.style.backgroundPositionX = '-1152px'
+    items['char'].classList.remove('wake')
+    items['char'].classList.add('die')
+  } else if(items['char'].classList.contains('die')) {
+    items['dead'].style.display = 'none'
+    items['char'].classList.add('wake')
   } else {
     items['dead'].style.display = 'none'
-    items['char'].lastChild.style.backgroundPositionX = '0px'
+    items['char'].classList.remove('die')
+  }
+  if(data['phase'] == 'Ended') {
+    items['char'].classList.add('jump')
+  } else {
+    items['char'].classList.remove('jump')
+  }
+  if(data['rank'] >= Object.keys(state).length-1) {
+    items['char'].classList.add('last')
+  } else {
+    items['char'].classList.remove('last')
   }
   let igt = formatTime(data['igt'])
   let gt = formatTime(data['gt'])
@@ -203,6 +217,7 @@ const init = () => {
       bigt: Math.random()<0.7?-0.0166666667:Math.floor(Math.random()*500),
       bgt: Math.random()<0.7?-0.0166666667:Math.floor(Math.random()*500),
       brt: Math.random()<0.7?-0.0166666667:Math.floor(Math.random()*500),
+      phase: Math.random()<0.2?'Ended':'Running'
     }
     state['player'+i] = foo
     updateHud(foo)
