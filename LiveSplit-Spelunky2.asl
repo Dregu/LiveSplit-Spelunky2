@@ -64,7 +64,7 @@ startup
 
   settings.Add("misc", true, "Miscellaneous");
   settings.Add("pause", true, "Keep ingame timers running when paused instead of updating on level change (just a visual thing during levels, doesn't change the split times or total time)", "misc");
-  settings.Add("webhook", false, "Enable webhook", "misc");
+  settings.Add("webhook", false, "Enable experimental webhook thing", "misc");
 }
 
 
@@ -86,6 +86,9 @@ init
   vars.webhookUrl = Environment.GetEnvironmentVariable("LIVESPLIT_WEBHOOK_URL", EnvironmentVariableTarget.User);
   vars.webhookAt = 0;
   vars.world = 0;
+  vars.pace = "";
+  vars.levelsleft = 0;
+  vars.levelstarted = 0.0;
 }
 
 start
@@ -110,6 +113,9 @@ start
     vars.webhookUrl = Environment.GetEnvironmentVariable("LIVESPLIT_WEBHOOK_URL", EnvironmentVariableTarget.User);
     vars.webhookAt = 0;
     vars.world = 0;
+    vars.pace = "";
+    vars.levelsleft = 0;
+    vars.levelstarted = 0.0;
     return true;
   }
 }
@@ -166,6 +172,9 @@ reset
     vars.shortcuts = 0;
     vars.webhookAt = 0;
     vars.world = 0;
+    vars.pace = "";
+    vars.levelsleft = 0;
+    vars.levelstarted = 0.0;
     return true;
   }
 }
@@ -199,6 +208,9 @@ update
     print("Clearing pausetimer on level transition");
     vars.paused = 0;
     vars.pausetime = 0;
+    if(timer.CurrentTime.GameTime.HasValue) {
+      vars.levelstarted = timer.CurrentTime.GameTime.Value.TotalSeconds;
+    }
   }
   if(current.igt < old.igt) {
     vars.totaltime += old.igt;
@@ -216,10 +228,6 @@ update
     print("Setting delayed split after CO at "+(current.counter+1).ToString());
     vars.splitAt = current.counter+1;
   }
-  /*if(settings["world"] && current.world != old.world && current.world > 1) {
-    print("Setting delayed split because new world ("+old.world+"->"+current.world+") at "+(current.counter+1).ToString());
-    vars.splitAt = current.counter+1;
-  }*/
   if((settings["rstitle"] && current.screen == 3 && old.screen != 3)
     || (settings["rsmenu"] && current.screen == 4 && old.screen != 4)) {
     print("Clearing state because of reset condition");
@@ -230,10 +238,78 @@ update
     vars.splitAt = 0;
     vars.started = 0;
     vars.shortcuts = 0;
+    vars.webhookAt = 0;
+    vars.world = 0;
+    vars.pace = "";
+    vars.levelsleft = 0;
+    vars.levelstarted = 0.0;
+    vars.leveltimeleft = "";
   }
   if(current.screen == 12) {
     vars.world = current.world;
   }
+
+  // stupid level pace calculation
+  vars.levelsleft = 0;
+  string levellist = "";
+  if(settings["tiamat"]) {
+    for(int w = vars.world; w <= 6; w++) {
+      for(int l = current.level; l <= 4; l++) {
+        levellist = levellist+", "+w.ToString()+"-"+l.ToString();
+        if(w == 3 && l == 1) {
+          vars.levelsleft++;
+          break;
+        } else if(w == 5 && l == 1) {
+          vars.levelsleft++;
+          break;
+        }
+        vars.levelsleft++;
+      }
+    }
+  } else if(settings["hundun"]) {
+    for(int w = vars.world; w <= 7; w++) {
+      for(int l = current.level; l <= 4; l++) {
+        levellist = levellist+", "+w.ToString()+"-"+l.ToString();
+        if(w == 3 && l == 1) {
+          vars.levelsleft++;
+          break;
+        } else if(w == 5 && l == 1) {
+          vars.levelsleft++;
+          break;
+        }
+        vars.levelsleft++;
+      }
+    }
+  } else if(settings["co"]) {
+    for(int w = vars.world; w <= 7; w++) {
+      for(int l = current.level; l <= 98; l++) {
+        levellist = levellist+", "+w.ToString()+"-"+l.ToString();
+        if(w == 3 && l == 1) {
+          vars.levelsleft++;
+          break;
+        } else if(w == 5 && l == 1) {
+          vars.levelsleft++;
+          break;
+        } else if(w < 7 && l >= 4) {
+          vars.levelsleft++;
+          break;
+        }
+        vars.levelsleft++;
+      }
+    }
+  }
+  if(current.screen == 13) {
+    vars.levelsleft -= 1;
+  }
+  double pb = (timer.Run[timer.Run.Count-1].PersonalBestSplitTime.GameTime.HasValue ? (timer.Run[timer.Run.Count-1].PersonalBestSplitTime.GameTime.Value).TotalSeconds : 0);
+  if(timer.CurrentTime.GameTime.HasValue) {
+    double timeleft = pb - vars.levelstarted;
+    double timeleftaverage = pb / vars.levelsleft;
+    TimeSpan average = TimeSpan.FromSeconds(timeleftaverage);
+    TimeSpan left = TimeSpan.FromSeconds(timeleftaverage-(timer.CurrentTime.GameTime.Value.TotalSeconds-vars.levelstarted));
+    vars.pace = (left < TimeSpan.FromSeconds(0)?"+":"-")+string.Format("{0:D1}:{1:D2} / {2:D1}:{3:D2}", Math.Abs(left.Minutes), Math.Abs(left.Seconds), average.Minutes, average.Seconds);
+  }
+
   // debug
   if(current.screen != old.screen || current.trans != old.trans || current.ingame != old.ingame || current.playing != old.playing || current.pause != old.pause || current.world != old.world || current.level != old.level || current.savedata[0xe8] != old.savedata[0xe8] || current.savedata[0xe2] != old.savedata[0xe2] || current.savedata[0xe9] != old.savedata[0xe9] || current.bombs != old.bombs || current.ropes != old.ropes || current.health != old.health) {
     print("frame: "+current.counter+" igt: "+current.igt+" screen: "+current.screen+" trans: "+current.trans+" ingame: "+current.ingame+" playing: "+current.playing+" pause: "+current.pause+" world: "+current.world+" level: "+current.level+" shortcut: "+current.savedata[0xe9]+" progress: "+current.savedata[0xe8]+" load time: "+vars.loadtime/1000.0);
@@ -241,6 +317,7 @@ update
     if(settings["webhook"] && vars.webhookUrl != null) {
         vars.webhookAt = current.counter+10;
     }
+    print("pb: "+pb.ToString()+levellist);
   }
   if(vars.webhookAt > 0 && current.counter >= vars.webhookAt) {
     vars.webhookAt = 0;
@@ -261,13 +338,14 @@ update
       +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x49c).ToString()
       +"&igt="+(current.igt/60.0).ToString(System.Globalization.CultureInfo.InvariantCulture)
       +"&gt="+timer.CurrentTime.GameTime.Value.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)
-      +"&rt="+timer.CurrentTime.RealTime.Value.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)
       +"&bigt="+(System.BitConverter.ToInt32(current.savedata, 0x2894)/60.0).ToString(System.Globalization.CultureInfo.InvariantCulture)
       +"&phase="+timer.CurrentPhase
       +"&splitindex="+timer.CurrentSplitIndex
       +"&splits="+timer.Run.Count
       +"&splittime="+(timer.CurrentSplitIndex < timer.Run.Count && timer.CurrentSplitIndex >= 0 && timer.Run[timer.CurrentSplitIndex].PersonalBestSplitTime.GameTime.HasValue ? (timer.Run[timer.CurrentSplitIndex].PersonalBestSplitTime.GameTime.Value).TotalSeconds : 0).ToString(System.Globalization.CultureInfo.InvariantCulture)
-      +"&lastsplittime="+(timer.Run[timer.Run.Count-1].PersonalBestSplitTime.GameTime.HasValue ? (timer.Run[timer.Run.Count-1].PersonalBestSplitTime.GameTime.Value).TotalSeconds : 0).ToString(System.Globalization.CultureInfo.InvariantCulture);
+      +"&pb="+(timer.Run[timer.Run.Count-1].PersonalBestSplitTime.GameTime.HasValue ? (timer.Run[timer.Run.Count-1].PersonalBestSplitTime.GameTime.Value).TotalSeconds : 0).ToString(System.Globalization.CultureInfo.InvariantCulture)
+      +"&levelsleft="+vars.levelsleft
+      +"&pace="+vars.pace;
     byte[] bytes = Encoding.ASCII.GetBytes(post);
     System.Net.WebRequest req = System.Net.WebRequest.Create(vars.webhookUrl);
     req.Method = "POST";

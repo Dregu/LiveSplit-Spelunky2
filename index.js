@@ -45,19 +45,6 @@ app.post('/:user/:pass', (req, res) => {
     acc[key] = isNaN(+value) ? value : +value
     return acc
   },{})
-  if(status.phase == 'Ended') {
-    let bgt = nconf.get('users:'+req.params.user+':bgt')
-    let brt = nconf.get('users:'+req.params.user+':brt')
-    if(bgt == undefined || bgt <= 0 || bgt > status.gt) {
-      nconf.set('users:'+req.params.user+':bgt', status.gt)
-      nconf.save()
-    } else if(brt == undefined || brt <= 0 || brt > status.rt) {
-      nconf.set('users:'+req.params.user+':brt', status.rt)
-      nconf.save()
-    }
-  }
-  status['bgt'] = nconf.get('users:'+req.params.user+':bgt') || -1/60
-  status['brt'] = nconf.get('users:'+req.params.user+':brt') || -1/60
   console.log(status)
   state[status['user']] = status
   broadcast(status)

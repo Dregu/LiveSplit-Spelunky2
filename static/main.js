@@ -94,12 +94,10 @@ const updateHud = (data) => {
   }
   let igt = formatTime(data['igt'])
   let gt = formatTime(data['gt'])
-  let rt = formatTime(data['rt'])
   let bigt = formatTime(data['bigt'])
-  let bgt = formatTime(data['bgt'])
-  let brt = formatTime(data['brt'])
+  let pb = formatTime(data['pb'])
   items['time'].firstChild.innerText = (data['gt'] > 0?gt:'')
-  items['best'].firstChild.innerText = (data['bgt'] > 0?bgt:'')
+  items['best'].firstChild.innerText = (data['pb'] > 0?pb:'')
   let hsl = getHsl(_colors[data['char']])
   items['health'].lastChild.style.filter = 'brightness('+(parseInt(hsl[2])*0.5+33)+'%) sepia(100%) hue-rotate('+(parseInt(hsl[0])-45)+'deg) saturate('+(parseInt(hsl[1])*3)+'%)'
 }
@@ -178,8 +176,8 @@ const updateRanks = () => {
   }
   users = users.sort((a, b) => {
     return cmp(
-      [cmp(sortTime(a.bgt), sortTime(b.bgt)), -cmp(a.shortcuts, b.shortcuts), -cmp(Math.max(sortLevel(a.level), sortLevel(a.record)), Math.max(sortLevel(b.level), sortLevel(b.record)))],
-      [cmp(sortTime(b.bgt), sortTime(a.bgt)), -cmp(b.shortcuts, a.shortcuts), -cmp(Math.max(sortLevel(b.level), sortLevel(b.record)), Math.max(sortLevel(a.level), sortLevel(a.record)))]
+      [cmp(sortTime(a.pb), sortTime(b.pb)), -cmp(a.shortcuts, b.shortcuts), -cmp(Math.max(sortLevel(a.level), sortLevel(a.record)), Math.max(sortLevel(b.level), sortLevel(b.record)))],
+      [cmp(sortTime(b.pb), sortTime(a.pb)), -cmp(b.shortcuts, a.shortcuts), -cmp(Math.max(sortLevel(b.level), sortLevel(b.record)), Math.max(sortLevel(a.level), sortLevel(a.record)))]
     )
   })
   for(let i = 0; i < users.length; i++) {
@@ -213,10 +211,8 @@ const init = () => {
       wins: [ Math.floor(Math.random()*8), Math.floor(Math.random()*3), Math.floor(Math.random()*2) ],
       igt: Math.floor(Math.random()*500),
       gt: Math.floor(Math.random()*500),
-      rt: Math.floor(Math.random()*500),
       bigt: Math.random()<0.7?-0.0166666667:Math.floor(Math.random()*500),
-      bgt: Math.random()<0.7?-0.0166666667:Math.floor(Math.random()*500),
-      brt: Math.random()<0.7?-0.0166666667:Math.floor(Math.random()*500),
+      pb: Math.random()<0.7?-0.0166666667:Math.floor(Math.random()*500),
       phase: Math.random()<0.2?'Ended':'Running'
     }
     state['player'+i] = foo
