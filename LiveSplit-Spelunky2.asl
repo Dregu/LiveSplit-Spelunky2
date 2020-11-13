@@ -280,7 +280,7 @@ update
     l++;
     vars.levelsleft++;
   }
-  if(current.screen == 13) {
+  if(current.screen == 13 || (current.screen == 12 && !current.playing)) {
     vars.levelsleft -= 1;
   }
   if(vars.levelsleft <= 0) {
