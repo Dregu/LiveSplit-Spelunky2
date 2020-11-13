@@ -301,6 +301,9 @@ update
   if(current.screen == 13) {
     vars.levelsleft -= 1;
   }
+  if(vars.levelsleft <= 0) {
+    vars.levelsleft = 1;
+  }
   double pb = (timer.Run[timer.Run.Count-1].PersonalBestSplitTime.GameTime.HasValue ? (timer.Run[timer.Run.Count-1].PersonalBestSplitTime.GameTime.Value).TotalSeconds : 0);
   if(timer.CurrentTime.GameTime.HasValue) {
     double timeleft = pb - vars.levelstarted;
@@ -317,7 +320,7 @@ update
     if(settings["webhook"] && vars.webhookUrl != null) {
         vars.webhookAt = current.counter+10;
     }
-    print("pb: "+pb.ToString()+levellist);
+    //print("pb: "+pb.ToString()+levellist);
   }
   if(vars.webhookAt > 0 && current.counter >= vars.webhookAt) {
     vars.webhookAt = 0;
