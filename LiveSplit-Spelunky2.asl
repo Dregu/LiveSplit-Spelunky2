@@ -32,6 +32,25 @@ state("Spel2", "1.16.0")
   // savedata indexes are -2 from https://github.com/spelunky-fyi/s2-data/blob/main/docs/save-format.md
 }
 
+state("Spel2", "1.17.0f")
+{
+  int counter : 0x221abf60, -192;
+  byte screen : 0x221abf60, 0x10;
+  byte loading : 0x221abf60, 0x14;
+  byte trans : 0x221abf60, 0x28;
+  byte fade : 0x221abf60, 0x2c;
+  bool ingame : 0x221abf60, 0x30;
+  bool playing : 0x221abf60, 0x31;
+  byte pause : 0x221abf60, 0x32;
+  int igt : 0x221abf60, 0x60;
+  byte world : 0x221abf60, 0x65;
+  byte level : 0x221abf60, 0x66;
+  byte health : 0x221abf60, 0x1298, 0x8, 0x10f;
+  byte bombs : 0x221abf60, 0x1298, 0x2c;
+  byte ropes : 0x221abf60, 0x1298, 0x2d;
+  byte255 savedata : 0x221abf18, 0x18, 0, 0;
+}
+
 startup
 {
   settings.Add("st", true, "Starting");
@@ -72,6 +91,7 @@ init
 {
   switch (modules.First().ModuleMemorySize) {
     case 570781696: version = "1.16.0"; break;
+    case 572653568: version = "1.17.0f"; break;
     default:        version = ""; break;
   }
   print("Spelunky 2 size "+modules.First().ModuleMemorySize.ToString()+" is version "+version);
