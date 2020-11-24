@@ -51,11 +51,31 @@ state("Spel2", "1.17.0f")
   byte255 savedata : 0x221abf18, 0x18, 0, 0;
 }
 
+state("Spel2", "1.18.0")
+{
+  int counter : 0x22139f70, -192;
+  byte screen : 0x22139f70, 0x10;
+  byte loading : 0x22139f70, 0x14;
+  byte trans : 0x22139f70, 0x28;
+  byte fade : 0x22139f70, 0x2c;
+  bool ingame : 0x22139f70, 0x30;
+  bool playing : 0x22139f70, 0x31;
+  byte pause : 0x22139f70, 0x32;
+  int igt : 0x22139f70, 0x60;
+  byte world : 0x22139f70, 0x65;
+  byte level : 0x22139f70, 0x66;
+  byte health : 0x22139f70, 0x1298, 0x8, 0x10f;
+  byte bombs : 0x22139f70, 0x1298, 0x2c;
+  byte ropes : 0x22139f70, 0x1298, 0x2d;
+  byte255 savedata : 0x22147ff8, 0, 0x48, 0;
+  //byte255 savedata : 0x22147ff8, 0, 0x8, 0x8, 0x48, 0;
+}
+
 startup
 {
   settings.Add("st", true, "Starting");
   settings.Add("stlevel", true, "[any%] Start on first level", "st");
-  settings.Add("stcamp", false, "[AS+T] Start on player selection", "st");
+  settings.Add("stcamp", false, "[AS+T] Start after player selection", "st");
 
   settings.Add("sp", true, "Splitting");
   settings.Add("trans", true, "[any%] Split on any level transition screen", "sp");
@@ -64,7 +84,7 @@ startup
   settings.Add("hundun", true, "Split on end cutscene after Hundun", "sp");
   settings.Add("co", true, "Split on end cutscene after Cosmic Ocean", "sp");
   settings.Add("shortcut", false, "[AS+T] Split on completed shortcut tasks", "sp");
-  settings.Add("tutorial", false, "[AS+T] Split when entering the big door after tutorial", "sp");
+  settings.Add("tutorial", false, "[AS+T] Split when unsealing the big door after tutorial", "sp");
   settings.Add("character", false, "Split on unlocking a new character", "sp");
   settings.Add("fade", false, "Split on walls are shifting/credits (this is broken)", "sp");
   settings.Add("level", false, "Split on new level start (this is stupid)", "sp");
@@ -92,6 +112,7 @@ init
   switch (modules.First().ModuleMemorySize) {
     case 570781696: version = "1.16.0"; break;
     case 572653568: version = "1.17.0f"; break;
+    case 572203008: version = "1.18.0"; break;
     default:        version = ""; break;
   }
   print("Spelunky 2 size "+modules.First().ModuleMemorySize.ToString()+" is version "+version);
