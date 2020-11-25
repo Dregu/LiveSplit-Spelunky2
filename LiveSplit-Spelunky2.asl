@@ -18,17 +18,19 @@ state("Spel2", "1.16.0")
   byte screen : 0x21fe2f60, 0x10;
   byte loading : 0x21fe2f60, 0x14;
   byte trans : 0x21fe2f60, 0x28;
-  byte fade : 0x21fe2f60, 0x2c;
   bool ingame : 0x21fe2f60, 0x30;
   bool playing : 0x21fe2f60, 0x31;
   byte pause : 0x21fe2f60, 0x32;
   int igt : 0x21fe2f60, 0x60;
   byte world : 0x21fe2f60, 0x65;
   byte level : 0x21fe2f60, 0x66;
+  float x : 0x21fe2f60, 0x1298, 0x8, 0x40;
+  float y : 0x21fe2f60, 0x1298, 0x8, 0x44;
+  byte door : 0x21fe2f60, 0x1298, 0x8, 0x114;
   byte health : 0x21fe2f60, 0x1298, 0x8, 0x10f;
   byte bombs : 0x21fe2f60, 0x1298, 0x2c;
   byte ropes : 0x21fe2f60, 0x1298, 0x2d;
-  byte12000 savedata : 0x21fe2f18, 0x18, 0, 0;
+  byte255 savedata : 0x21fe2f18, 0x18, 0, 0;
   // savedata indexes are -2 from https://github.com/spelunky-fyi/s2-data/blob/main/docs/save-format.md
 }
 
@@ -38,13 +40,15 @@ state("Spel2", "1.17.0f")
   byte screen : 0x221abf60, 0x10;
   byte loading : 0x221abf60, 0x14;
   byte trans : 0x221abf60, 0x28;
-  byte fade : 0x221abf60, 0x2c;
   bool ingame : 0x221abf60, 0x30;
   bool playing : 0x221abf60, 0x31;
   byte pause : 0x221abf60, 0x32;
   int igt : 0x221abf60, 0x60;
   byte world : 0x221abf60, 0x65;
   byte level : 0x221abf60, 0x66;
+  float x : 0x221abf60, 0x1298, 0x8, 0x40;
+  float y : 0x221abf60, 0x1298, 0x8, 0x44;
+  byte door : 0x221abf60, 0x1298, 0x8, 0x114;
   byte health : 0x221abf60, 0x1298, 0x8, 0x10f;
   byte bombs : 0x221abf60, 0x1298, 0x2c;
   byte ropes : 0x221abf60, 0x1298, 0x2d;
@@ -57,25 +61,27 @@ state("Spel2", "1.18.0")
   byte screen : 0x22139f70, 0x10;
   byte loading : 0x22139f70, 0x14;
   byte trans : 0x22139f70, 0x28;
-  byte fade : 0x22139f70, 0x2c;
   bool ingame : 0x22139f70, 0x30;
   bool playing : 0x22139f70, 0x31;
   byte pause : 0x22139f70, 0x32;
   int igt : 0x22139f70, 0x60;
   byte world : 0x22139f70, 0x65;
   byte level : 0x22139f70, 0x66;
+  float x : 0x22139f70, 0x1298, 0x8, 0x40;
+  float y : 0x22139f70, 0x1298, 0x8, 0x44;
+  byte door : 0x22139f70, 0x1298, 0x8, 0x114;
   byte health : 0x22139f70, 0x1298, 0x8, 0x10f;
   byte bombs : 0x22139f70, 0x1298, 0x2c;
   byte ropes : 0x22139f70, 0x1298, 0x2d;
   byte255 savedata : 0x22147ff8, 0, 0x48, 0;
-  //byte255 savedata : 0x22147ff8, 0, 0x8, 0x8, 0x48, 0;
 }
 
 startup
 {
   settings.Add("st", true, "Starting");
   settings.Add("stlevel", true, "[any%] Start on first level", "st");
-  settings.Add("stcamp", false, "[AS+T] Start after player selection", "st");
+  settings.Add("stcamp", false, "Start when entering the camp after player selection", "st");
+  settings.Add("stdoor", false, "Start when entering the big door", "st");
 
   settings.Add("sp", true, "Splitting");
   settings.Add("trans", true, "[any%] Split on any level transition screen", "sp");
@@ -83,10 +89,9 @@ startup
   settings.Add("tiamat", true, "[any%] [AS+T] Split on end cutscene after Tiamat", "sp");
   settings.Add("hundun", true, "Split on end cutscene after Hundun", "sp");
   settings.Add("co", true, "Split on end cutscene after Cosmic Ocean", "sp");
-  settings.Add("shortcut", false, "[AS+T] Split on completed shortcut tasks", "sp");
-  settings.Add("tutorial", false, "[AS+T] Split when unsealing the big door after tutorial", "sp");
+  settings.Add("shortcut", false, "[AS+T] Split on completed shortcut tasks (\"Sure!\")", "sp");
+  settings.Add("tutorial", false, "Split on unsealing the big door after tutorial", "sp");
   settings.Add("character", false, "Split on unlocking a new character", "sp");
-  settings.Add("fade", false, "Split on walls are shifting/credits (this is broken)", "sp");
   settings.Add("level", false, "Split on new level start (this is stupid)", "sp");
 
   settings.Add("rs", true, "Resetting");
@@ -96,7 +101,7 @@ startup
 
   settings.Add("tm", true, "Timing method used by \"Game Time\" comparison (select exactly one)");
   settings.Add("ingame", true, "[any%] Ingame timer (pauses on level transitions, resets on camp)", "tm");
-  settings.Add("loadless", false, "[AS+T] Loadless timer (uses real time minus levelgen time)", "tm");
+  settings.Add("loadless", false, "Loadless timer (uses real time minus levelgen time)", "tm");
   settings.Add("framecount", false, "Global frame counter (basically runs whenever you can interact with the game)", "tm");
   settings.Add("ingamesum", false, "Sum of ingame times (runs in game and in camp, persists across restarts, pauses in main menu and between levels)", "tm");
   settings.Add("realtime", false, "Real time (yes it just copies real time to game time)", "tm");
@@ -141,7 +146,8 @@ start
     return;
   }
   if ((settings["stlevel"] && current.playing && current.igt > 1 && old.igt == 1 && current.screen == 12)
-  || (settings["stcamp"] && current.ingame && !old.ingame && current.pause == 0 && vars.started == 0 && current.screen == 11)) {
+  || (settings["stcamp"] && current.ingame && !old.ingame && current.pause == 0 && vars.started == 0 && current.screen == 11)
+  || (settings["stdoor"] && current.screen == 11 && current.door == 1 && old.door == 0 && current.x > 41.0 && current.x < 43.0)) {
     print("Starting timer");
     vars.paused = 0;
     vars.pausetime = 0;
@@ -181,9 +187,6 @@ split
     return true;
   } else if(settings["world"] && current.world != old.world && current.world > 1) {
     print("Splitting because new world ("+old.world+"->"+current.world+")");
-    return true;
-  } else if(settings["fade"] && (current.fade == 40 && old.fade != 40)) {
-    print("Splitting after fade");
     return true;
   } else if(settings["shortcut"] && current.savedata[0xe9] != old.savedata[0xe9] && current.savedata[0xe9] > 1) {
     print("Splitting because completed shortcut task");
