@@ -76,6 +76,27 @@ state("Spel2", "1.18.0")
   byte255 savedata : 0x22147ff8, 0, 0x48, 0;
 }
 
+state("Spel2", "1.19.0a")
+{
+  int counter : 0x22138f80, -192;
+  byte screen : 0x22138f80, 0x10;
+  byte loading : 0x22138f80, 0x14;
+  byte trans : 0x22138f80, 0x28;
+  bool ingame : 0x22138f80, 0x30;
+  bool playing : 0x22138f80, 0x31;
+  byte pause : 0x22138f80, 0x32;
+  int igt : 0x22138f80, 0x60;
+  byte world : 0x22138f80, 0x65;
+  byte level : 0x22138f80, 0x66;
+  float x : 0x22138f80, 0x1298, 0x8, 0x40;
+  float y : 0x22138f80, 0x1298, 0x8, 0x44;
+  byte door : 0x22138f80, 0x1298, 0x8, 0x114;
+  byte health : 0x22138f80, 0x1298, 0x8, 0x10f;
+  byte bombs : 0x22138f80, 0x1298, 0x2c;
+  byte ropes : 0x22138f80, 0x1298, 0x2d;
+  byte255 savedata : 0x22138f40, 0x18, 0, 0;
+}
+
 startup
 {
   settings.Add("st", true, "Starting");
@@ -118,6 +139,7 @@ init
     case 570781696: version = "1.16.0"; break;
     case 572653568: version = "1.17.0f"; break;
     case 572203008: version = "1.18.0"; break;
+    case 572198912: version = "1.19.0a"; break;
     default:        version = ""; break;
   }
   print("Spelunky 2 size "+modules.First().ModuleMemorySize.ToString()+" is version "+version);
