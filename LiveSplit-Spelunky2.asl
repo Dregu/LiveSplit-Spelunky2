@@ -117,8 +117,9 @@ startup
 
   settings.Add("rs", true, "Resetting");
   settings.Add("rsrestart", true, "[any%] Reset on instant restart/in camp", "rs");
-  settings.Add("rsmenu", true, "Reset in main menu", "rs");
-  settings.Add("rstitle", true, "Reset in title screen", "rs");
+  settings.Add("rsmenu", false, "Reset in main menu", "rs");
+  settings.Add("rstitle", false, "Reset in title screen", "rs");
+  settings.Add("rsshortcut", false, "[AS+T] Reset on \"Reset Shortcuts\"", "rs");
 
   settings.Add("tm", true, "Timing method used by \"Game Time\" comparison (select exactly one)");
   settings.Add("ingame", true, "[any%] Ingame timer (pauses on level transitions, resets on camp)", "tm");
@@ -150,7 +151,6 @@ init
   vars.loaded = 0.0;
   vars.totaltime = 0;
   vars.splitAt = 0;
-  vars.shortcuts = 0;
   vars.webhookUrl = Environment.GetEnvironmentVariable("LIVESPLIT_WEBHOOK_URL", EnvironmentVariableTarget.User);
   vars.webhookAt = 0;
   vars.world = 0;
@@ -177,7 +177,6 @@ start
     vars.loaded = 0.0;
     vars.totaltime = 0;
     vars.splitAt = 0;
-    vars.shortcuts = 0;
     vars.started = current.counter;
     vars.webhookUrl = Environment.GetEnvironmentVariable("LIVESPLIT_WEBHOOK_URL", EnvironmentVariableTarget.User);
     vars.webhookAt = 0;
@@ -229,7 +228,8 @@ reset
   }
   if ((settings["rstitle"] && current.screen == 3 && old.screen != 3)
     || (settings["rsrestart"] && current.igt <= 1)
-    || (settings["rsmenu"] && !current.ingame && !current.playing && current.pause == 0)) {
+    || (settings["rsmenu"] && !current.ingame && !current.playing && current.pause == 0)
+    || (settings["rsshortcut"] && current.savedata[0xe9] < old.savedata[0xe9])) {
     print("Resetting timer");
     vars.paused = 0;
     vars.pausetime = 0;
@@ -238,7 +238,6 @@ reset
     vars.totaltime = 0;
     vars.splitAt = 0;
     vars.started = 0;
-    vars.shortcuts = 0;
     vars.webhookAt = 0;
     vars.world = 0;
     vars.pace = "";
@@ -309,7 +308,6 @@ update
     vars.loaded = 0;
     vars.splitAt = 0;
     vars.started = 0;
-    vars.shortcuts = 0;
     vars.webhookAt = 0;
     vars.world = 0;
     vars.pace = "";
