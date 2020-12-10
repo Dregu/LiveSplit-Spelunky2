@@ -102,7 +102,7 @@ startup
   settings.Add("st", true, "Starting");
   settings.Add("stlevel", true, "[any%] Start on first level", "st");
   settings.Add("stcamp", false, "Start when entering the camp after player selection", "st");
-  settings.Add("stdoor", false, "Start when entering the big door", "st");
+  settings.Add("stdoor", false, "[AS+T] Start when entering the big door", "st");
 
   settings.Add("sp", true, "Splitting");
   settings.Add("trans", true, "[any%] Split on any level transition screen", "sp");
@@ -125,7 +125,7 @@ startup
   settings.Add("loadless", false, "Loadless timer (uses real time minus levelgen time)", "tm");
   settings.Add("framecount", false, "Global frame counter (basically runs whenever you can interact with the game)", "tm");
   settings.Add("ingamesum", false, "Sum of ingame times (runs in game and in camp, persists across restarts, pauses in main menu and between levels)", "tm");
-  settings.Add("realtime", false, "Real time (yes it just copies real time to game time)", "tm");
+  settings.Add("realtime", false, "[AS+T] Real time (yes it just copies real time to game time)", "tm");
 
   settings.Add("misc", true, "Miscellaneous");
   settings.Add("pause", true, "Keep ingame timers running when paused instead of updating on level change (just a visual thing during levels, doesn't change the split times or total time)", "misc");
