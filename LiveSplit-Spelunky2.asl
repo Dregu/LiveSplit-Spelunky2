@@ -97,12 +97,28 @@ state("Spel2", "1.19.0a")
   byte255 savedata : 0x22138f40, 0x18, 0, 0;
 }
 
+// 0x221A0DC8, 0x88, 0x58, 0x38, 0x3c8
+state("Spel2", "1.19.7a")
+{
+  int counter : 0x221A0DC8, 0x88, 0x58, 0x38, 0x2f8;
+  byte screen : 0x221A0DC8, 0x88, 0x58, 0x38, 0x3d8;
+  byte loading : 0x221A0DC8, 0x88, 0x58, 0x38, 0x3dc;
+  byte trans : 0x221A0DC8, 0x88, 0x58, 0x38, 0x3f0;
+  bool ingame : 0x221A0DC8, 0x88, 0x58, 0x38, 0x3f8;
+  bool playing : 0x221A0DC8, 0x88, 0x58, 0x38, 0x3f9;
+  byte pause : 0x221A0DC8, 0x88, 0x58, 0x38, 0x3fa;
+  int igt : 0x221A0DC8, 0x88, 0x58, 0x38, 0x428;
+  byte world : 0x221A0DC8, 0x88, 0x58, 0x38, 0x42d;
+  byte level : 0x221A0DC8, 0x88, 0x58, 0x38, 0x42e;
+  byte door : 0x221A0DC8, 0x88, 0x58, 0x7300;
+  byte255 savedata : 0x22193748, 0, 0x48, 0;
+}
+
 startup
 {
   settings.Add("st", true, "Starting");
   settings.Add("stlevel", true, "[any%] Start on first level", "st");
-  settings.Add("stcamp", false, "Start when entering the camp after player selection", "st");
-  settings.Add("stdoor", false, "[AS+T] Start when entering the big door", "st");
+  settings.Add("stdoor", false, "[AS+T] Start on door (note: use the appropriate timing method too)", "st");
 
   settings.Add("sp", true, "Splitting");
   settings.Add("trans", true, "[any%] Split on any level transition screen", "sp");
@@ -111,9 +127,7 @@ startup
   settings.Add("hundun", true, "Split on end cutscene after Hundun", "sp");
   settings.Add("co", true, "Split on end cutscene after Cosmic Ocean", "sp");
   settings.Add("shortcut", false, "[AS+T] Split on completed shortcut tasks (\"Sure!\")", "sp");
-  settings.Add("tutorial", false, "Split on unsealing the big door after tutorial", "sp");
   settings.Add("character", false, "Split on unlocking a new character", "sp");
-  settings.Add("level", false, "Split on new level start (this is stupid)", "sp");
 
   settings.Add("rs", true, "Resetting");
   settings.Add("rsrestart", true, "[any%] Reset on instant restart/in camp", "rs");
@@ -123,16 +137,16 @@ startup
 
   settings.Add("tm", true, "Timing method used by \"Game Time\" comparison (select exactly one)");
   settings.Add("ingame", true, "[any%] Ingame timer (pauses on level transitions, resets on camp)", "tm");
-  settings.Add("loadless", false, "Loadless timer (uses real time minus levelgen time)", "tm");
-  settings.Add("framecount", false, "Global frame counter (basically runs whenever you can interact with the game)", "tm");
-  settings.Add("ingamesum", false, "Sum of ingame times (runs in game and in camp, persists across restarts, pauses in main menu and between levels)", "tm");
-  settings.Add("realtime", false, "[AS+T] Real time (yes it just copies real time to game time)", "tm");
+  //settings.Add("loadless", false, "Loadless timer (uses real time minus levelgen time)", "tm");
+  //settings.Add("framecount", false, "Global frame counter (basically runs whenever you can interact with the game)", "tm");
+  //settings.Add("ingamesum", false, "Sum of ingame times (runs in game and in camp, persists across restarts, pauses in main menu and between levels)", "tm");
+  settings.Add("realtime", false, "Real time (yes it just copies real time to game time)", "tm");
+  settings.Add("astime", false, "[AS+T] RTA timer for door start (1.19.7a+, adds 0.67s to RT)", "tm");
 
   settings.Add("misc", true, "Miscellaneous");
   settings.Add("pause", true, "Keep ingame timers running when paused instead of updating on level change (just a visual thing during levels, doesn't change the split times or total time)", "misc");
   settings.Add("webhook", false, "Enable experimental webhook thing", "misc");
 }
-
 
 init
 {
@@ -141,6 +155,7 @@ init
     case 572653568: version = "1.17.0f"; break;
     case 572203008: version = "1.18.0"; break;
     case 572198912: version = "1.19.0a"; break;
+    case 572555264: version = "1.19.7a"; break;
     default:        version = ""; break;
   }
   print("Spelunky 2 size "+modules.First().ModuleMemorySize.ToString()+" is version "+version);
@@ -168,8 +183,7 @@ start
     return;
   }
   if ((settings["stlevel"] && current.playing && current.igt > 1 && old.igt == 1 && current.screen == 12)
-  || (settings["stcamp"] && current.ingame && !old.ingame && current.pause == 0 && vars.started == 0 && current.screen == 11)
-  || (settings["stdoor"] && current.screen == 11 && current.door == 1 && old.door == 0 && current.x > 41.0 && current.x < 43.0)) {
+  || (settings["stdoor"] && ((current.screen == 11 && current.door == 1 && old.door == 0) || (current.screen == 12 && old.screen == 11)))) {
     print("Starting timer");
     vars.paused = 0;
     vars.pausetime = 0;
@@ -199,21 +213,15 @@ split
   if(current.screen <= 3) {
     return;
   }
-  if(vars.splitAt > 0 && current.counter >= vars.splitAt && current.igt > 10) {
+  if(vars.splitAt > 0 && current.counter >= vars.splitAt && current.igt > 10 && current.screen != 14) {
     print("Splitting after level transition delay");
     vars.splitAt = 0;
-    return true;
-  } else if(settings["level"] && current.level != old.level) {
-    print("Splitting because new level ("+old.level+"->"+current.level+")");
     return true;
   } else if(settings["world"] && current.world != old.world && current.world > 1) {
     print("Splitting because new world ("+old.world+"->"+current.world+")");
     return true;
   } else if(settings["shortcut"] && current.savedata[0xe9] != old.savedata[0xe9] && current.savedata[0xe9] > 1) {
     print("Splitting because completed shortcut task");
-    return true;
-  } else if(settings["tutorial"] && current.savedata[0xe8] != old.savedata[0xe8] && current.savedata[0xe8] == 3) {
-    print("Splitting after tutorial");
     return true;
   } else if(settings["character"] && (current.savedata[0xe4] != old.savedata[0xe4] || current.savedata[0xe5] != old.savedata[0xe5] || current.savedata[0xe6] != old.savedata[0xe6])) {
     print("Splitting because character unlocked");
@@ -299,8 +307,10 @@ update
     print("Setting delayed split after CO at "+(current.counter+1).ToString());
     vars.splitAt = current.counter+1;
   }
-  if((settings["rstitle"] && current.screen == 3 && old.screen != 3)
-    || (settings["rsmenu"] && current.screen == 4 && old.screen != 4)) {
+  if ((settings["rstitle"] && current.screen == 3 && old.screen != 3)
+    || (settings["rsrestart"] && current.igt <= 1)
+    || (settings["rsmenu"] && !current.ingame && !current.playing && current.pause == 0)
+    || (settings["rsshortcut"] && current.savedata[0xe9] < old.savedata[0xe9])) {
     print("Clearing state because of reset condition");
     vars.paused = 0;
     vars.pausetime = 0;
@@ -370,7 +380,7 @@ update
   }
 
   // debug
-  if(current.screen != old.screen || current.trans != old.trans || current.ingame != old.ingame || current.playing != old.playing || current.pause != old.pause || current.world != old.world || current.level != old.level || current.savedata[0xe8] != old.savedata[0xe8] || current.savedata[0xe2] != old.savedata[0xe2] || current.savedata[0xe9] != old.savedata[0xe9] || current.bombs != old.bombs || current.ropes != old.ropes || current.health != old.health) {
+  if(current.screen != old.screen || current.trans != old.trans || current.ingame != old.ingame || current.playing != old.playing || current.pause != old.pause || current.world != old.world || current.level != old.level || current.savedata[0xe8] != old.savedata[0xe8] || current.savedata[0xe2] != old.savedata[0xe2] || current.savedata[0xe9] != old.savedata[0xe9]) {
     print("frame: "+current.counter+" igt: "+current.igt+" screen: "+current.screen+" trans: "+current.trans+" ingame: "+current.ingame+" playing: "+current.playing+" pause: "+current.pause+" world: "+current.world+" level: "+current.level+" shortcut: "+current.savedata[0xe9]+" progress: "+current.savedata[0xe8]+" load time: "+vars.loadtime/1000.0);
     vars.webhookUrl = Environment.GetEnvironmentVariable("LIVESPLIT_WEBHOOK_URL", EnvironmentVariableTarget.User);
     if(settings["webhook"] && vars.webhookUrl != null) {
@@ -428,7 +438,8 @@ gameTime
   if(version == "") {
     return;
   }
-  if((settings["ingame"] || settings["ingamesum"]) && current.igt == old.igt) {
+  //if((settings["ingame"] || settings["ingamesum"]) && current.igt == old.igt) {
+  if(settings["ingame"] && current.igt == old.igt) {
     timer.IsGameTimePaused = true;
   } else {
     timer.IsGameTimePaused = false;
@@ -443,7 +454,7 @@ gameTime
     } else {
       return TimeSpan.FromSeconds((current.igt)/60.0);
     }
-  } else if(settings["framecount"]) {
+  } /*else if(settings["framecount"]) {
     return TimeSpan.FromSeconds((current.counter-vars.started)/60.0);
   } else if(settings["loadless"]) {
     return TimeSpan.FromMilliseconds(timer.CurrentTime.RealTime.Value.TotalMilliseconds-vars.loadtime);
@@ -457,7 +468,9 @@ gameTime
     } else {
       return TimeSpan.FromSeconds((current.igt+vars.totaltime)/60.0);
     }
-  } else if(settings["realtime"]) {
+  } */else if(settings["realtime"]) {
     return timer.CurrentTime.RealTime;
+  } else if(settings["astime"]) {
+    return timer.CurrentTime.RealTime+TimeSpan.FromSeconds(0.667);
   }
 }
