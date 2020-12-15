@@ -12,91 +12,6 @@ state("Spel2")
   // unknown version
 }
 
-state("Spel2", "1.16.0")
-{
-  int counter : 0x21fe2f60, -192;
-  byte screen : 0x21fe2f60, 0x10;
-  byte loading : 0x21fe2f60, 0x14;
-  byte trans : 0x21fe2f60, 0x28;
-  bool ingame : 0x21fe2f60, 0x30;
-  bool playing : 0x21fe2f60, 0x31;
-  byte pause : 0x21fe2f60, 0x32;
-  int igt : 0x21fe2f60, 0x60;
-  byte world : 0x21fe2f60, 0x65;
-  byte level : 0x21fe2f60, 0x66;
-  float x : 0x21fe2f60, 0x1298, 0x8, 0x40;
-  float y : 0x21fe2f60, 0x1298, 0x8, 0x44;
-  byte door : 0x21fe2f60, 0x1298, 0x8, 0x114;
-  byte health : 0x21fe2f60, 0x1298, 0x8, 0x10f;
-  byte bombs : 0x21fe2f60, 0x1298, 0x2c;
-  byte ropes : 0x21fe2f60, 0x1298, 0x2d;
-  byte255 savedata : 0x21fe2f18, 0x18, 0, 0;
-  // savedata indexes are -2 from https://github.com/spelunky-fyi/s2-data/blob/main/docs/save-format.md
-}
-
-state("Spel2", "1.17.0f")
-{
-  int counter : 0x221abf60, -192;
-  byte screen : 0x221abf60, 0x10;
-  byte loading : 0x221abf60, 0x14;
-  byte trans : 0x221abf60, 0x28;
-  bool ingame : 0x221abf60, 0x30;
-  bool playing : 0x221abf60, 0x31;
-  byte pause : 0x221abf60, 0x32;
-  int igt : 0x221abf60, 0x60;
-  byte world : 0x221abf60, 0x65;
-  byte level : 0x221abf60, 0x66;
-  float x : 0x221abf60, 0x1298, 0x8, 0x40;
-  float y : 0x221abf60, 0x1298, 0x8, 0x44;
-  byte door : 0x221abf60, 0x1298, 0x8, 0x114;
-  byte health : 0x221abf60, 0x1298, 0x8, 0x10f;
-  byte bombs : 0x221abf60, 0x1298, 0x2c;
-  byte ropes : 0x221abf60, 0x1298, 0x2d;
-  byte255 savedata : 0x221abf18, 0x18, 0, 0;
-}
-
-state("Spel2", "1.18.0")
-{
-  int counter : 0x22139f70, -192;
-  byte screen : 0x22139f70, 0x10;
-  byte loading : 0x22139f70, 0x14;
-  byte trans : 0x22139f70, 0x28;
-  bool ingame : 0x22139f70, 0x30;
-  bool playing : 0x22139f70, 0x31;
-  byte pause : 0x22139f70, 0x32;
-  int igt : 0x22139f70, 0x60;
-  byte world : 0x22139f70, 0x65;
-  byte level : 0x22139f70, 0x66;
-  float x : 0x22139f70, 0x1298, 0x8, 0x40;
-  float y : 0x22139f70, 0x1298, 0x8, 0x44;
-  byte door : 0x22139f70, 0x1298, 0x8, 0x114;
-  byte health : 0x22139f70, 0x1298, 0x8, 0x10f;
-  byte bombs : 0x22139f70, 0x1298, 0x2c;
-  byte ropes : 0x22139f70, 0x1298, 0x2d;
-  byte255 savedata : 0x22147ff8, 0, 0x48, 0;
-}
-
-state("Spel2", "1.19.0a")
-{
-  int counter : 0x22138f80, -192;
-  byte screen : 0x22138f80, 0x10;
-  byte loading : 0x22138f80, 0x14;
-  byte trans : 0x22138f80, 0x28;
-  bool ingame : 0x22138f80, 0x30;
-  bool playing : 0x22138f80, 0x31;
-  byte pause : 0x22138f80, 0x32;
-  int igt : 0x22138f80, 0x60;
-  byte world : 0x22138f80, 0x65;
-  byte level : 0x22138f80, 0x66;
-  float x : 0x22138f80, 0x1298, 0x8, 0x40;
-  float y : 0x22138f80, 0x1298, 0x8, 0x44;
-  byte door : 0x22138f80, 0x1298, 0x8, 0x114;
-  byte health : 0x22138f80, 0x1298, 0x8, 0x10f;
-  byte bombs : 0x22138f80, 0x1298, 0x2c;
-  byte ropes : 0x22138f80, 0x1298, 0x2d;
-  byte255 savedata : 0x22138f40, 0x18, 0, 0;
-}
-
 // 0x221A0DC8, 0x88, 0x58, 0x38, 0x3c8
 state("Spel2", "1.19.7a")
 {
@@ -111,7 +26,7 @@ state("Spel2", "1.19.7a")
   byte world : 0x221A0DC8, 0x88, 0x58, 0x38, 0x42d;
   byte level : 0x221A0DC8, 0x88, 0x58, 0x38, 0x42e;
   byte door : 0x221A0DC8, 0x88, 0x58, 0x7300;
-  byte255 savedata : 0x22193748, 0, 0x48, 0;
+  byte12000 savedata : 0x22193748, 0, 0x48, 0;
 }
 
 startup
@@ -122,26 +37,23 @@ startup
 
   settings.Add("sp", true, "Splitting");
   settings.Add("trans", true, "[any%] Split on any level transition screen", "sp");
-  settings.Add("world", false, "Split on any world transition screen", "sp");
+  settings.Add("shortcut", false, "[AS+T] Split on completed shortcut tasks (\"Sure!\")", "sp");
   settings.Add("tiamat", true, "[any%] [AS+T] Split on end cutscene after Tiamat", "sp");
   settings.Add("hundun", true, "Split on end cutscene after Hundun", "sp");
   settings.Add("co", true, "Split on end cutscene after Cosmic Ocean", "sp");
-  settings.Add("shortcut", false, "[AS+T] Split on completed shortcut tasks (\"Sure!\")", "sp");
+  settings.Add("world", false, "Split on any world transition screen", "sp");
   settings.Add("character", false, "Split on unlocking a new character", "sp");
 
   settings.Add("rs", true, "Resetting");
-  settings.Add("rsrestart", true, "[any%] Reset on instant restart/in camp", "rs");
+  settings.Add("rsrestart", true, "[any%] Reset on death/instant restart/in camp", "rs");
+  settings.Add("rsshortcut", false, "[AS+T] Reset on \"Reset Shortcuts\"", "rs");
   settings.Add("rsmenu", false, "Reset in main menu", "rs");
   settings.Add("rstitle", false, "Reset in title screen", "rs");
-  settings.Add("rsshortcut", false, "[AS+T] Reset on \"Reset Shortcuts\"", "rs");
 
   settings.Add("tm", true, "Timing method used by \"Game Time\" comparison (select exactly one)");
   settings.Add("ingame", true, "[any%] Ingame timer (pauses on level transitions, resets on camp)", "tm");
-  //settings.Add("loadless", false, "Loadless timer (uses real time minus levelgen time)", "tm");
-  //settings.Add("framecount", false, "Global frame counter (basically runs whenever you can interact with the game)", "tm");
-  //settings.Add("ingamesum", false, "Sum of ingame times (runs in game and in camp, persists across restarts, pauses in main menu and between levels)", "tm");
+  settings.Add("astime", false, "[AS+T] RTA timer for door start (1.19.7a+, adds 0.63s to RT)", "tm");
   settings.Add("realtime", false, "Real time (yes it just copies real time to game time)", "tm");
-  settings.Add("astime", false, "[AS+T] RTA timer for door start (1.19.7a+, adds 0.67s to RT)", "tm");
 
   settings.Add("misc", true, "Miscellaneous");
   settings.Add("pause", true, "Keep ingame timers running when paused instead of updating on level change (just a visual thing during levels, doesn't change the split times or total time)", "misc");
@@ -151,10 +63,6 @@ startup
 init
 {
   switch (modules.First().ModuleMemorySize) {
-    case 570781696: version = "1.16.0"; break;
-    case 572653568: version = "1.17.0f"; break;
-    case 572203008: version = "1.18.0"; break;
-    case 572198912: version = "1.19.0a"; break;
     case 572555264: version = "1.19.7a"; break;
     default:        version = ""; break;
   }
@@ -392,9 +300,9 @@ update
     vars.webhookAt = 0;
     print("Using webhook: "+vars.webhookUrl);
     var post = "char="+current.savedata[0x2a78].ToString()
-      +"&health="+current.health.ToString()
-      +"&bombs="+current.bombs.ToString()
-      +"&ropes="+current.ropes.ToString()
+      +"&health=4"
+      +"&bombs=4"
+      +"&ropes=4"
       +"&level[]="+(current.screen >= 12?vars.world.ToString():0)
       +"&level[]="+(current.screen >= 12?current.level.ToString():0)
       +"&record[]="+(current.savedata[0x4ac].ToString())
@@ -471,6 +379,6 @@ gameTime
   } */else if(settings["realtime"]) {
     return timer.CurrentTime.RealTime;
   } else if(settings["astime"]) {
-    return timer.CurrentTime.RealTime+TimeSpan.FromSeconds(0.667);
+    return timer.CurrentTime.RealTime+TimeSpan.FromSeconds(0.63);
   }
 }
