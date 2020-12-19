@@ -59,11 +59,13 @@ startup
   settings.Add("hundun", true, "Split on end cutscene after Hundun", "sp");
   settings.Add("co", true, "Split on end cutscene after Cosmic Ocean", "sp");
   settings.Add("world", false, "Split on any world transition screen", "sp");
-  settings.Add("character", false, "Split on unlocking a new character", "sp");
+  settings.Add("character", false, "[AC] Split on new character unlocked", "sp");
+  settings.Add("characters", false, "Split on 20 characters unlocked", "sp");
 
-  settings.Add("rs", true, "Resetting");
+  settings.Add("rs", true, "Resetting (Data Management options trigger only if there's something to reset)");
   settings.Add("rsrestart", true, "[any%] Reset on death/instant restart/in camp", "rs");
   settings.Add("rsshortcut", false, "[AS+T] Reset on \"Reset Shortcuts\"", "rs");
+  settings.Add("rscharacter", false, "[AC] Reset on \"Reset Unlocked Characters\"", "rs");
   settings.Add("rsmenu", false, "Reset in main menu", "rs");
   settings.Add("rstitle", false, "Reset in title screen", "rs");
 
@@ -75,6 +77,24 @@ startup
   settings.Add("misc", true, "Miscellaneous");
   settings.Add("pause", true, "Keep ingame timers running when paused instead of updating on level change (just a visual thing during levels, doesn't change the split times or total time)", "misc");
   settings.Add("webhook", false, "Enable experimental webhook thing", "misc");
+
+  vars.getCharacters = (Func<int, int, int, int>)((a, b, c) => {
+    int count = 0;
+    while (a > 0) {
+        count += a & 1;
+        a >>= 1;
+    }
+    while (b > 0) {
+        count += b & 1;
+        b >>= 1;
+    }
+    while (c > 0) {
+        count += c & 1;
+        c >>= 1;
+    }
+    vars.characters = count;
+    return count;
+  });
 }
 
 init
@@ -98,6 +118,7 @@ init
   vars.pace = "";
   vars.levelsleft = 0;
   vars.levelstarted = 0.0;
+  vars.characters = 0;
 }
 
 start
@@ -139,6 +160,7 @@ split
   if(current.screen <= 3) {
     return;
   }
+  vars.getCharacters(current.savedata[0xe4], current.savedata[0xe5], current.savedata[0xe6]);
   if(vars.splitAt > 0 && current.counter >= vars.splitAt && current.igt > 10 && current.screen != 14) {
     print("Splitting after level transition delay");
     vars.splitAt = 0;
@@ -149,8 +171,11 @@ split
   } else if(settings["shortcut"] && current.savedata[0xe9] != old.savedata[0xe9] && current.savedata[0xe9] > 1) {
     print("Splitting because completed shortcut task");
     return true;
-  } else if(settings["character"] && (current.savedata[0xe4] != old.savedata[0xe4] || current.savedata[0xe5] != old.savedata[0xe5] || current.savedata[0xe6] != old.savedata[0xe6])) {
+  } else if(settings["character"] && (current.savedata[0xe4] > old.savedata[0xe4] || current.savedata[0xe5] > old.savedata[0xe5] || current.savedata[0xe6] > old.savedata[0xe6])) {
     print("Splitting because character unlocked");
+    return true;
+  } else if(settings["characters"] && (current.savedata[0xe4] > old.savedata[0xe4] || current.savedata[0xe5] > old.savedata[0xe5] || current.savedata[0xe6] > old.savedata[0xe6]) && vars.characters == 20) {
+    print("Splitting because all characters unlocked");
     return true;
   }
 }
@@ -160,10 +185,12 @@ reset
   if(version == "") {
     return;
   }
+  vars.getCharacters(current.savedata[0xe4], current.savedata[0xe5], current.savedata[0xe6]);
   if ((settings["rstitle"] && current.screen == 3 && old.screen != 3)
     || (settings["rsrestart"] && current.igt <= 1)
     || (settings["rsmenu"] && !current.ingame && !current.playing && current.pause == 0)
-    || (settings["rsshortcut"] && current.savedata[0xe9] < old.savedata[0xe9])) {
+    || (settings["rsshortcut"] && current.savedata[0xe9] < old.savedata[0xe9])
+    || (settings["rscharacter"] && (current.savedata[0xe4] < old.savedata[0xe4] || current.savedata[0xe5] < old.savedata[0xe5] || current.savedata[0xe6] < old.savedata[0xe6]) && vars.characters == 4)) {
     print("Resetting timer");
     vars.paused = 0;
     vars.pausetime = 0;
@@ -189,6 +216,7 @@ update
   if(version == "") {
     return;
   }
+  vars.getCharacters(current.savedata[0xe4], current.savedata[0xe5], current.savedata[0xe6]);
   if(current.pause == 1 && old.pause == 0) {
     timer.IsGameTimePaused = true;
     vars.paused = current.counter;
@@ -236,8 +264,8 @@ update
   if ((settings["rstitle"] && current.screen == 3 && old.screen != 3)
     || (settings["rsrestart"] && current.igt <= 1)
     || (settings["rsmenu"] && !current.ingame && !current.playing && current.pause == 0)
-    || (settings["rsshortcut"] && current.savedata[0xe9] < old.savedata[0xe9])) {
-    print("Clearing state because of reset condition");
+    || (settings["rsshortcut"] && current.savedata[0xe9] < old.savedata[0xe9])
+    || (settings["rscharacter"] && (current.savedata[0xe4] < old.savedata[0xe4] || current.savedata[0xe5] < old.savedata[0xe5] || current.savedata[0xe6] < old.savedata[0xe6]) && vars.characters == 4)) {
     vars.paused = 0;
     vars.pausetime = 0;
     vars.loadtime = 0;
@@ -306,8 +334,8 @@ update
   }
 
   // debug
-  if(current.screen != old.screen || current.trans != old.trans || current.ingame != old.ingame || current.playing != old.playing || current.pause != old.pause || current.world != old.world || current.level != old.level || current.savedata[0xe8] != old.savedata[0xe8] || current.savedata[0xe2] != old.savedata[0xe2] || current.savedata[0xe9] != old.savedata[0xe9]) {
-    print("frame: "+current.counter+" igt: "+current.igt+" screen: "+current.screen+" trans: "+current.trans+" ingame: "+current.ingame+" playing: "+current.playing+" pause: "+current.pause+" world: "+current.world+" level: "+current.level+" shortcut: "+current.savedata[0xe9]+" progress: "+current.savedata[0xe8]+" load time: "+vars.loadtime/1000.0);
+  if(current.screen != old.screen || current.trans != old.trans || current.ingame != old.ingame || current.playing != old.playing || current.pause != old.pause || current.world != old.world || current.level != old.level || current.savedata[0xe8] != old.savedata[0xe8] || current.savedata[0xe2] != old.savedata[0xe2] || current.savedata[0xe9] != old.savedata[0xe9] || current.savedata[0xe4] != old.savedata[0xe4] || current.savedata[0xe5] != old.savedata[0xe5] || current.savedata[0xe6] != old.savedata[0xe6]) {
+    print("frame: "+current.counter+" igt: "+current.igt+" screen: "+current.screen+" trans: "+current.trans+" ingame: "+current.ingame+" playing: "+current.playing+" pause: "+current.pause+" world: "+current.world+" level: "+current.level+" shortcut: "+current.savedata[0xe9]+" progress: "+current.savedata[0xe8]+" character: "+vars.characters+" load time: "+vars.loadtime/1000.0);
     vars.webhookUrl = Environment.GetEnvironmentVariable("LIVESPLIT_WEBHOOK_URL", EnvironmentVariableTarget.User);
     if(settings["webhook"] && vars.webhookUrl != null) {
         vars.webhookAt = current.counter+10;
@@ -326,6 +354,7 @@ update
       +"&record[]="+(current.savedata[0x4ac].ToString())
       +"&record[]="+(current.savedata[0x4ad].ToString())
       +"&shortcuts="+(current.savedata[0xe9] > 1?current.savedata[0xe9]-1:0).ToString()
+      +"&characters="+vars.characters.ToString()
       +"&tries="+System.BitConverter.ToInt32(current.savedata, 0x48c).ToString()
       +"&deaths="+System.BitConverter.ToInt32(current.savedata, 0x490).ToString()
       +"&wins[]="+System.BitConverter.ToInt32(current.savedata, 0x494).ToString()
