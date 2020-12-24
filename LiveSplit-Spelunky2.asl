@@ -53,7 +53,7 @@ state("Spel2", "1.20.0j")
   byte loading : 0x221A3DC8, 0x4b4;
   byte trans : 0x221A3DC8, 0x4c8;
   bool ingame : 0x221A3DC8, 0x4d0;
-  bool playing : 0x221A3DC8, 0x4ca;
+  bool playing : 0x221A3DC8, 0x4d1;
   byte pause : 0x221A3DC8, 0x4d2;
   int igt : 0x221A3DC8, 0x500;
   byte world : 0x221A3DC8, 0x505;
@@ -254,7 +254,7 @@ update
     vars.loaded = 0;
     print("Finished loading, it took "+delta/1000.0+"s");
   }
-  if(current.trans == 18 && old.trans != 18) {
+  if(current.screen == 13 && old.screen != 13) {
     print("Clearing pausetimer on level transition");
     vars.paused = 0;
     vars.pausetime = 0;
@@ -265,7 +265,7 @@ update
   if(current.igt < old.igt) {
     vars.totaltime += old.igt;
   }
-  if(settings["trans"] && current.trans == 18 && old.trans != 18 && current.screen == 13) {
+  if(settings["trans"] && current.screen == 13 && old.screen != 13) {
     print("Setting delayed split after level transition at "+(current.counter+1).ToString());
     vars.splitAt = current.counter+1;
   } else if(settings["tiamat"] && current.trans == 18 && old.trans != 18 && current.world == 6 && current.level == 4) {
