@@ -268,13 +268,13 @@ update
   if(settings["trans"] && current.screen == 13 && old.screen != 13) {
     print("Setting delayed split after level transition at "+(current.counter+1).ToString());
     vars.splitAt = current.counter+1;
-  } else if(settings["tiamat"] && current.trans == 18 && old.trans != 18 && current.world == 6 && current.level == 4) {
+  } else if(settings["tiamat"] && current.world == 6 && current.level == 4 && current.screen == 16 && old.screen != 16) {
     print("Setting delayed split after Tiamat at "+(current.counter+1).ToString());
     vars.splitAt = current.counter+1;
-  } else if(settings["hundun"] && current.trans == 18 && old.trans != 18 && current.world == 7 && current.level == 4) {
+  } else if(settings["hundun"] && current.world == 7 && current.level == 4 && current.screen == 16 && old.screen != 16) {
     print("Setting delayed split after Hundun at "+(current.counter+1).ToString());
     vars.splitAt = current.counter+1;
-  } else if(settings["co"] && current.trans == 18 && old.trans != 18 && current.level == 98) {
+  } else if(settings["co"] && current.world == 7 && current.level == 99 && current.screen == 19 && old.screen != 19) {
     print("Setting delayed split after CO at "+(current.counter+1).ToString());
     vars.splitAt = current.counter+1;
   }
