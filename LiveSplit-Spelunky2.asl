@@ -15,16 +15,11 @@ startup {
   settings.Add("characters", false, "Split on 20 characters unlocked", "sp");
   settings.Add("world", false, "Split on any world transition screen", "sp");
 
-  settings.Add("rs", true, "Resetting (Data Management options trigger only if there's something to reset)");
+  settings.Add("rs", true, "Resetting (Data Management triggers only if there's something to reset)");
   settings.Add("rsrestart", true, "[any%] Reset on death/instant restart/in camp", "rs");
   settings.Add("rsdata", false, "[AS+T] [AC] Reset on \"Data Management\" reset", "rs");
   settings.Add("rsmenu", false, "Reset in main menu", "rs");
   settings.Add("rstitle", false, "Reset in title screen", "rs");
-
-  settings.Add("tm", true, "Timing method used by \"Game Time\" comparison (select exactly one)");
-  settings.Add("ingame", true, "[any%] Ingame timer (pauses on level transitions, resets on camp)", "tm");
-  settings.Add("astime", false, "[AS+T] RTA timer for door start (1.19.7a+, adds 0.63s to RT)", "tm");
-  settings.Add("realtime", false, "Real time (yes it just copies real time to game time)", "tm");
 }
 
 init {
@@ -54,12 +49,7 @@ init {
   }
   print("AutoSplitter: "+ptr.ToString("x"));
   print("State: "+stateptr.ToString("x"));
-  //vars.state.Add(new MemoryWatcher<unsigned int>(ptr+0x10) { Name = "counter" });
   vars.state.Add(new MemoryWatcher<byte>(ptr+0x14) { Name = "screen" });
-  //vars.state.Add(new MemoryWatcher<byte>(ptr+0x15) { Name = "loading" });
-  //vars.state.Add(new MemoryWatcher<byte>(ptr+0x17) { Name = "ingame" });
-  //vars.state.Add(new MemoryWatcher<byte>(ptr+0x18) { Name = "playing" });
-  //vars.state.Add(new MemoryWatcher<byte>(ptr+0x1a) { Name = "pause" });
   vars.state.Add(new MemoryWatcher<int>(ptr+0x1c) { Name = "igt" });
   vars.state.Add(new MemoryWatcher<byte>(ptr+0x20) { Name = "world" });
   vars.state.Add(new MemoryWatcher<byte>(ptr+0x21) { Name = "level" });
@@ -143,11 +133,5 @@ reset {
 }
 
 gameTime {
-  if(settings["ingame"]) {
-    return TimeSpan.FromSeconds(vars.state["igt"].Current/60.0);
-  } else if(settings["realtime"]) {
-    return timer.CurrentTime.RealTime;
-  } else if(settings["astime"]) {
-    return timer.CurrentTime.RealTime+TimeSpan.FromSeconds(0.63);
-  }
+  return TimeSpan.FromSeconds(vars.state["igt"].Current/60.0);
 }
