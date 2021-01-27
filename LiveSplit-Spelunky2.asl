@@ -50,6 +50,7 @@ init {
   print("AutoSplitter: "+ptr.ToString("x"));
   print("State: "+stateptr.ToString("x"));
   vars.state.Add(new MemoryWatcher<byte>(ptr+0x14) { Name = "screen" });
+  vars.state.Add(new MemoryWatcher<byte>(ptr+0x1a) { Name = "pause" });
   vars.state.Add(new MemoryWatcher<int>(ptr+0x1c) { Name = "igt" });
   vars.state.Add(new MemoryWatcher<byte>(ptr+0x20) { Name = "world" });
   vars.state.Add(new MemoryWatcher<byte>(ptr+0x21) { Name = "level" });
@@ -96,7 +97,7 @@ split {
   } else if(settings["co"] && vars.state["screen"].Changed && vars.state["screen"].Current == 19) {
     print("Split: CO ending");
     return true;
-  } else if(settings["shortcut"] && vars.state["shortcuts"].Changed) {
+  } else if(settings["shortcut"] && vars.state["shortcuts"].Changed && vars.state["shortcuts"].Current > 1) {
     print("Split: Shortcut unlocked");
     return true;
   } else if(settings["character"] && vars.state["characters"].Changed) {
@@ -124,9 +125,7 @@ reset {
     print("Reset: Menu");
     return true;
   }
-  if(settings["rsdata"] && 
-    (vars.state["characters"].Current < vars.state["characters"].Old) ||
-    (vars.state["shortcuts"].Current < vars.state["shortcuts"].Old)) {
+  if(settings["rsdata"] && vars.state["screen"].Current == 5 && vars.state["pause"].Changed && vars.state["pause"].Current == 16) {
     print("Reset: Data Management");
     return true;
   }
