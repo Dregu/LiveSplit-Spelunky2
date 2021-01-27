@@ -1,17 +1,9 @@
 # LiveSplit-Spelunky2
-LiveSplit Autosplitter for Spelunky 2
+LiveSplit Autosplitter for Spelunky 2. This is automatically loaded by LiveSplit if you set your game to Spelunky 2.
 
 ## Features
 
-Supports tracking ingame time, splitting on level changes, world changes, ending cutscenes, terra encounters, load time removal for All Shortcuts + Tiamat and other realtime categories. **Remember to set LiveSplit to Compare Agains -> Game Time** and check the settings for the right category options.
-
-### Level Pace (for Celeritas etc)
-The autosplitter supports tracking the average time per level needed to PB. The amount of levels left is calculated from the ending you selected in the settings.
-
-The level pace doesn't need actual splits for every level! Here's an example Cosmic Ocean setup with splits on world transitions only. First you need to extract the [ASLVarViewer](https://github.com/hawkerm/LiveSplit.ASLVarViewer/releases/latest) component to your LiveSplit\Components directory and set it up like so:
-![ASLVarViewer setup](https://cdn.discordapp.com/attachments/756241793753809106/776845172373192754/unknown.png)
-![CO setup](https://cdn.discordapp.com/attachments/756241793753809106/776849296162422804/unknown.png)
-![Done](https://cdn.discordapp.com/attachments/762462481963548682/776880866118729768/unknown.png)
+Supports tracking ingame time, rta time, splitting on level changes, world changes, ending cutscenes, terra encounters and character unlocks. **Remember to check the settings in split editor for the right category options.**
 
 ## Game data
 
