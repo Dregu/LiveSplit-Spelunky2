@@ -2,24 +2,27 @@ state("Spel2") {}
 
 startup {
   settings.Add("st", true, "Starting");
-  settings.Add("stlevel", true, "[any%] Start on first level", "st");
-  settings.Add("stdoor", false, "[AS+T] Start on cave door", "st");
+  settings.Add("stlevel", true, "Start on first level (uses IGT timing)", "st");
+  settings.Add("stdoor", false, "Start on cave door (uses RTA timing)", "st");
 
   settings.Add("sp", true, "Splitting");
-  settings.Add("trans", true, "[any%] Split on any level transition screen", "sp");
-  settings.Add("tiamat", true, "[any%] [AS+T] Split on end cutscene after Tiamat", "sp");
+  settings.Add("trans", true, "Split on any level transition screen", "sp");
+  settings.Add("world", false, "Split on any world transition", "sp");
+  settings.Add("tiamat", true, "Split on end cutscene after Tiamat", "sp");
   settings.Add("hundun", true, "Split on end cutscene after Hundun", "sp");
   settings.Add("co", true, "Split on end cutscene after Cosmic Ocean", "sp");
-  settings.Add("shortcut", false, "[AS+T] Split on completed shortcut tasks (\"Sure!\")", "sp");
-  settings.Add("character", false, "[AC] Split on new character unlocked", "sp");
+  settings.Add("shortcut", false, "Split on completed shortcut tasks (\"Sure!\")", "sp");
+  settings.Add("character", false, "Split on new character unlocked", "sp");
   settings.Add("characters", false, "Split on 20 characters unlocked", "sp");
-  settings.Add("world", false, "Split on any world transition screen", "sp");
 
-  settings.Add("rs", true, "Resetting (Data Management triggers only if there's something to reset)");
-  settings.Add("rsrestart", true, "[any%] Reset on death/instant restart/in camp", "rs");
-  settings.Add("rsdata", false, "[AS+T] [AC] Reset on \"Data Management\" reset", "rs");
+  settings.Add("rs", true, "Resetting");
+  settings.Add("rsrestart", true, "Reset on death/instant restart/in camp", "rs");
+  settings.Add("rsdata", false, "Reset on \"Data Management\" reset", "rs");
   settings.Add("rsmenu", false, "Reset in main menu", "rs");
   settings.Add("rstitle", false, "Reset in title screen", "rs");
+
+  settings.Add("tm", true, "Timing (Game Time returns the proper time based on your Start option)");
+  settings.Add("tmforce", true, "Force current timing method to Game Time", "tm");
 }
 
 init {
@@ -60,6 +63,7 @@ init {
 }
 
 update {
+  if(settings["tmforce"] && timer.CurrentTimingMethod != TimingMethod.GameTime) timer.CurrentTimingMethod = TimingMethod.GameTime;
   vars.state.UpdateAll(game);
   timer.IsGameTimePaused = !vars.state["igt"].Changed;
   if(vars.state["screen"].Changed) print("Screen: "+vars.state["screen"].Old.ToString()+" -> "+vars.state["screen"].Current.ToString());
@@ -106,7 +110,7 @@ split {
   } else if(settings["characters"] && vars.state["characters"].Changed && vars.state["characters"].Current == 20) {
     print("Split: All characters unlocked");
     return true;
-  } else if(settings["world"] && vars.state["world"].Current > vars.state["world"].Old) {
+  } else if(settings["world"] && vars.state["world"].Changed) {
     print("Split: World");
     return true;
   } 
@@ -132,5 +136,9 @@ reset {
 }
 
 gameTime {
-  return TimeSpan.FromSeconds(vars.state["igt"].Current/60.0);
+  if(settings["stlevel"]) {
+    return TimeSpan.FromSeconds(vars.state["igt"].Current/60.0);
+  } else if(settings["stdoor"]) {
+    return timer.CurrentTime.RealTime;
+  }
 }
