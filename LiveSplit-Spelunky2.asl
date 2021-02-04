@@ -2,22 +2,22 @@ state("Spel2") {}
 
 startup {
   settings.Add("st", true, "Starting");
-  settings.Add("stlevel", true, "Start on first level (uses IGT timing)", "st");
-  settings.Add("stdoor", false, "Start on cave door (uses RTA timing)", "st");
+  settings.Add("stlevel", true, "Start on start of first level (uses IGT timing) [any%]", "st");
+  settings.Add("stdoor", false, "Start on entering cave door (uses RTA timing) [AS+T, AC]", "st");
 
   settings.Add("sp", true, "Splitting");
-  settings.Add("trans", true, "Split on any level transition screen", "sp");
+  settings.Add("trans", true, "Split on any level transition screen [any%]", "sp");
   settings.Add("world", false, "Split on any world transition", "sp");
-  settings.Add("tiamat", true, "Split on end cutscene after Tiamat", "sp");
-  settings.Add("hundun", true, "Split on end cutscene after Hundun", "sp");
-  settings.Add("co", true, "Split on end cutscene after Cosmic Ocean", "sp");
-  settings.Add("shortcut", false, "Split on completed shortcut tasks (\"Sure!\")", "sp");
-  settings.Add("character", false, "Split on new character unlocked", "sp");
+  settings.Add("tiamat", true, "Split on end cutscene after Tiamat [any%, AS+T]", "sp");
+  settings.Add("hundun", true, "Split on end cutscene after Hundun [any%]", "sp");
+  settings.Add("co", true, "Split on end cutscene after Cosmic Ocean [any%]", "sp");
+  settings.Add("shortcut", false, "Split on completed shortcut tasks [AS+T]", "sp");
+  settings.Add("character", false, "Split on new character unlocked [AC]", "sp");
   settings.Add("characters", false, "Split on 20 characters unlocked", "sp");
 
   settings.Add("rs", true, "Resetting");
-  settings.Add("rsrestart", true, "Reset on death/instant restart/in camp", "rs");
-  settings.Add("rsdata", false, "Reset on \"Data Management\" reset", "rs");
+  settings.Add("rsrestart", true, "Reset on death/instant restart/in camp [any%]", "rs");
+  settings.Add("rsdata", false, "Reset on \"Data Management\" reset [AS+T, AC]", "rs");
   settings.Add("rsmenu", false, "Reset in main menu", "rs");
   settings.Add("rstitle", false, "Reset in title screen", "rs");
 
@@ -29,29 +29,17 @@ init {
   vars.reset = false;
   vars.state = new MemoryWatcherList();
   IntPtr ptr = IntPtr.Zero;
-  IntPtr stateptr = IntPtr.Zero;
   foreach (var page in game.MemoryPages(true)) {
     var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
-    IntPtr findptr = scanner.Scan(new SigScanTarget(0, 0x44, 0x52, 0x45, 0x47, 0x55, 0x41, 0x53, 0x4C)); // "DREGUASL" lol
+    IntPtr findptr = scanner.Scan(new SigScanTarget(0, 0x44, 0x52, 0x45, 0x47, 0x55, 0x41, 0x53, 0x4C));
     if (findptr != IntPtr.Zero) {
       ptr = findptr;
-    }
-  }
-  foreach (var page in game.MemoryPages(false)) {
-    var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
-    IntPtr findptr = scanner.Scan(new SigScanTarget(-0x60, 0xDE, 0xC0, 0xED, 0xFE)); // 0xFEEDC0DE
-    if (findptr != IntPtr.Zero) {
-      stateptr = findptr;
     }
   }
   if (ptr == IntPtr.Zero) {
     throw new Exception("Could not find magic number for AutoSplitter!");
   }
-  if (stateptr == IntPtr.Zero) {
-    throw new Exception("Could not find magic number for State!");
-  }
   print("AutoSplitter: "+ptr.ToString("x"));
-  print("State: "+stateptr.ToString("x"));
   vars.state.Add(new MemoryWatcher<byte>(ptr+0x14) { Name = "screen" });
   vars.state.Add(new MemoryWatcher<byte>(ptr+0x1a) { Name = "pause" });
   vars.state.Add(new MemoryWatcher<int>(ptr+0x1c) { Name = "igt" });
@@ -59,7 +47,9 @@ init {
   vars.state.Add(new MemoryWatcher<byte>(ptr+0x21) { Name = "level" });
   vars.state.Add(new MemoryWatcher<int>(ptr+0x28) { Name = "characters" });
   vars.state.Add(new MemoryWatcher<byte>(ptr+0x2c) { Name = "shortcuts" });
-  vars.state.Add(new MemoryWatcher<int>(stateptr+0xa0c) { Name = "flags" });
+  vars.state.Add(new MemoryWatcher<int>(ptr+0x294) { Name = "door" });
+  vars.state.Add(new MemoryWatcher<int>(ptr+0x298) { Name = "reset" });
+  vars.state.Add(new MemoryWatcher<int>(ptr+0x29c) { Name = "reset_type" });
 }
 
 update {
@@ -71,7 +61,9 @@ update {
   if(vars.state["level"].Changed) print("Level: "+vars.state["level"].Old.ToString()+" -> "+vars.state["level"].Current.ToString());
   if(vars.state["characters"].Changed) print("Characters: "+vars.state["characters"].Old.ToString()+" -> "+vars.state["characters"].Current.ToString());
   if(vars.state["shortcuts"].Changed) print("Shortcuts: "+vars.state["shortcuts"].Old.ToString()+" -> "+vars.state["shortcuts"].Current.ToString());
-  if(vars.state["flags"].Changed) print("Flags: "+vars.state["flags"].Old.ToString("X8")+" -> "+vars.state["flags"].Current.ToString("X8"));
+  if(vars.state["door"].Changed) print("Door frame: "+vars.state["door"].Old.ToString()+" -> "+vars.state["door"].Current.ToString());
+  if(vars.state["reset"].Changed) print("Reset frame: "+vars.state["reset"].Old.ToString()+" -> "+vars.state["reset"].Current.ToString());
+  if(vars.state["reset_type"].Changed) print("Reset type: "+vars.state["reset_type"].Old.ToString()+" -> "+vars.state["reset_type"].Current.ToString());
 }
 
 start {
@@ -80,7 +72,7 @@ start {
   if(settings["stlevel"] && vars.state["screen"].Current == 12 && vars.state["igt"].Current > 1) {
     print("Start: Level");
     return true;
-  } else if(settings["stdoor"] && vars.state["screen"].Current == 11 && vars.state["flags"].Changed && (vars.state["flags"].Current & 0x100000) > 0) {
+  } else if(settings["stdoor"] && vars.state["screen"].Current == 11 && vars.state["door"].Changed) {
     print("Start: Door");
     return true;
   }
@@ -129,7 +121,7 @@ reset {
     print("Reset: Menu");
     return true;
   }
-  if(settings["rsdata"] && vars.state["screen"].Current == 5 && vars.state["pause"].Changed && vars.state["pause"].Current == 16) {
+  if(settings["rsdata"] && vars.state["screen"].Current == 5 && vars.state["reset"].Changed) {
     print("Reset: Data Management");
     return true;
   }
