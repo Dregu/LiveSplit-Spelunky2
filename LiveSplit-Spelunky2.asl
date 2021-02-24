@@ -108,7 +108,7 @@ update {
     if (vars.saveptr == IntPtr.Zero) {
       vars.initTracker();
     }
-    vars.journal = game.ReadBytes((IntPtr)vars.saveptr, 0xd1);
+    vars.journal = game.ReadBytes((IntPtr)vars.saveptr, 0xec);
     int sum = 0;
     Array.ForEach((System.Byte[])vars.journal, i => sum += i);
     if (sum != vars.checksum) {
