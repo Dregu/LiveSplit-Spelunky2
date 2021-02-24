@@ -5,6 +5,8 @@ LiveSplit Autosplitter for Spelunky 2. This is automatically loaded by LiveSplit
 
 Supports tracking ingame time, rta time, splitting on level changes, world changes, ending cutscenes, terra encounters and character unlocks. **Remember to check the settings in split editor for the right category options.**
 
+You can also use this with the [journal tracker](https://github.com/Dregu/s2tracker) if you enable it in the options.
+
 ## Game data
 
 Data structure provided by BlitWorks to help with autosplitter and statistics stuff.
