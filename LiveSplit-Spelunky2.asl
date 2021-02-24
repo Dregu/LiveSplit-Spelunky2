@@ -25,7 +25,7 @@ startup {
   settings.Add("tmforce", true, "Force current timing method to Game Time", "tm");
 
   settings.Add("ms", true, "Miscellaneous");
-  settings.Add("tracker", false, "Enable journal tracker support", "ms");
+  settings.Add("tracker", false, "Send journal data to s2tracker", "ms");
 }
 
 init {
@@ -57,34 +57,38 @@ init {
   // Journal tracker stuff
   vars.saveptr = IntPtr.Zero;
   vars.checksum = 0;
-  do {
-    var gameDir = Path.GetDirectoryName(modules.First().FileName);
-    var path = gameDir + "\\" + "savegame.sav";
-    try {
-      FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-      byte[] data = new byte[fs.Length];
-      int numBytesToRead = (int)fs.Length;
-      int numBytesRead = 0;
-      while (numBytesToRead > 0) {
-        int n = fs.Read(data, numBytesRead, numBytesToRead);
-        if (n == 0) break;
-        numBytesRead += n;
-        numBytesToRead -= n;
-      }
-      print("Read "+data.Length.ToString());
-      byte[] pattern = data.Skip(2).Take(1024).ToArray();
-      foreach (var page in game.MemoryPages(true)) {
-        var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
-        IntPtr findptr = scanner.Scan(new SigScanTarget(0, pattern));
-        if (findptr != IntPtr.Zero) {
-          vars.saveptr = findptr;
+  Action initTracker = delegate() {
+    do {
+      Thread.Sleep(1000);
+      var gameDir = Path.GetDirectoryName(modules.First().FileName);
+      var path = gameDir + "\\" + "savegame.sav";
+      try {
+        FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+        byte[] data = new byte[fs.Length];
+        int numBytesToRead = (int)fs.Length;
+        int numBytesRead = 0;
+        while (numBytesToRead > 0) {
+          int n = fs.Read(data, numBytesRead, numBytesToRead);
+          if (n == 0) break;
+          numBytesRead += n;
+          numBytesToRead -= n;
         }
+        print("Read "+data.Length.ToString());
+        byte[] pattern = data.Skip(2).Take(1024).ToArray();
+        foreach (var page in game.MemoryPages(true)) {
+          var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
+          IntPtr findptr = scanner.Scan(new SigScanTarget(0, pattern));
+          if (findptr != IntPtr.Zero) {
+            vars.saveptr = findptr;
+          }
+        }
+      } catch {
+        print("Can't open savegame.sav");
       }
-    } catch {
-      print("Can't open savegame.sav");
-    }
-  } while (vars.saveptr == IntPtr.Zero);
-  print("Savedata: "+vars.saveptr.ToString("x"));
+    } while (vars.saveptr == IntPtr.Zero);
+    print("Savedata: "+vars.saveptr.ToString("x"));
+  };
+  vars.initTracker = initTracker;
 }
 
 update {
@@ -101,6 +105,9 @@ update {
   if(vars.state["reset_type"].Changed) print("Reset type: "+vars.state["reset_type"].Old.ToString()+" -> "+vars.state["reset_type"].Current.ToString());
 
   if (settings["tracker"]) {
+    if (vars.saveptr == IntPtr.Zero) {
+      vars.initTracker();
+    }
     vars.journal = game.ReadBytes((IntPtr)vars.saveptr, 0xd1);
     int sum = 0;
     Array.ForEach((System.Byte[])vars.journal, i => sum += i);
