@@ -74,7 +74,7 @@ init {
           numBytesToRead -= n;
         }
         print("Read "+data.Length.ToString());
-        byte[] pattern = data.Skip(2).Take(1024).ToArray();
+        byte[] pattern = data.Skip(2).Take(256).ToArray();
         foreach (var page in game.MemoryPages(true)) {
           var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
           IntPtr findptr = scanner.Scan(new SigScanTarget(0, pattern));
