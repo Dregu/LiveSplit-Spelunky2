@@ -3,7 +3,7 @@ state("Spel2") {}
 startup {
   settings.Add("st", true, "Starting");
   settings.Add("stlevel", true, "Start on start of first level (uses IGT timing) [any%]", "st");
-  settings.Add("stdoor", false, "Start on entering cave door (uses RTA timing) [AS+T, AC]", "st");
+  settings.Add("stdoor", false, "Start on entering cave door (uses RTA timing) [AS+T, AC, AJE]", "st");
 
   settings.Add("sp", true, "Splitting");
   settings.Add("trans", true, "Split on any level transition screen [any%]", "sp");
@@ -14,10 +14,11 @@ startup {
   settings.Add("shortcut", false, "Split on completed shortcut tasks [AS+T]", "sp");
   settings.Add("character", false, "Split on new character unlocked [AC]", "sp");
   settings.Add("characters", false, "Split on 20 characters unlocked", "sp");
+  settings.Add("journal", false, "Split on 100% journal unlocked [AJE]", "sp");
 
   settings.Add("rs", true, "Resetting");
   settings.Add("rsrestart", true, "Reset on death/instant restart/in camp [any%]", "rs");
-  settings.Add("rsdata", false, "Reset on \"Data Management\" reset [AS+T, AC]", "rs");
+  settings.Add("rsdata", false, "Reset on \"Data Management\" reset [AS+T, AC, AJE]", "rs");
   settings.Add("rsmenu", false, "Reset in main menu", "rs");
   settings.Add("rstitle", false, "Reset in title screen", "rs");
 
@@ -25,18 +26,28 @@ startup {
   settings.Add("tmforce", true, "Force current timing method to Game Time", "tm");
 
   settings.Add("ms", true, "Miscellaneous");
-  settings.Add("tracker", false, "Send journal data to s2tracker", "ms");
+  settings.Add("tracker", false, "Send journal data to s2tracker [AC, AJE]", "ms");
 }
 
 init {
   vars.reset = false;
   vars.state = new MemoryWatcherList();
   IntPtr ptr = IntPtr.Zero;
+  vars.saveptr = IntPtr.Zero;
+  vars.checksum = 0;
+  vars.lastsum = 0;
+
   foreach (var page in game.MemoryPages(true)) {
     var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
     IntPtr findptr = scanner.Scan(new SigScanTarget(0, 0x44, 0x52, 0x45, 0x47, 0x55, 0x41, 0x53, 0x4C));
+    IntPtr saveptr = scanner.Scan(new SigScanTarget(16, 0, 0, 0, 0, 0, 0, 0, 0, 0xA3, 0x35, 0, 0, 0, 0, 0, 0));
     if (findptr != IntPtr.Zero) {
       ptr = findptr;
+    }
+    if (saveptr != IntPtr.Zero) {
+      vars.saveptr = saveptr;
+      vars.journal = game.ReadBytes((IntPtr)vars.saveptr, 210);
+      print("Savedata: "+vars.saveptr.ToString("x"));
     }
   }
   if (ptr == IntPtr.Zero) {
@@ -54,39 +65,16 @@ init {
   vars.state.Add(new MemoryWatcher<int>(ptr+0x298) { Name = "reset" });
   vars.state.Add(new MemoryWatcher<int>(ptr+0x29c) { Name = "reset_type" });
 
-  // Journal tracker stuff
-  vars.saveptr = IntPtr.Zero;
-  vars.checksum = 0;
   Action initTracker = delegate() {
-    do {
-      Thread.Sleep(1000);
-      var gameDir = Path.GetDirectoryName(modules.First().FileName);
-      var path = gameDir + "\\" + "savegame.sav";
-      try {
-        FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-        byte[] data = new byte[fs.Length];
-        int numBytesToRead = (int)fs.Length;
-        int numBytesRead = 0;
-        while (numBytesToRead > 0) {
-          int n = fs.Read(data, numBytesRead, numBytesToRead);
-          if (n == 0) break;
-          numBytesRead += n;
-          numBytesToRead -= n;
-        }
-        print("Read "+data.Length.ToString());
-        byte[] pattern = data.Skip(2).Take(256).ToArray();
-        foreach (var page in game.MemoryPages(true)) {
-          var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
-          IntPtr findptr = scanner.Scan(new SigScanTarget(0, pattern));
-          if (findptr != IntPtr.Zero) {
-            vars.saveptr = findptr;
-          }
-        }
-      } catch {
-        print("Can't open savegame.sav");
+    foreach (var page in game.MemoryPages(true)) {
+      var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
+      IntPtr saveptr = scanner.Scan(new SigScanTarget(16, 0, 0, 0, 0, 0, 0, 0, 0, 0xA3, 0x35, 0, 0, 0, 0, 0, 0));
+      if (saveptr != IntPtr.Zero) {
+        vars.saveptr = saveptr;
+        vars.journal = game.ReadBytes((IntPtr)vars.saveptr, 210);
+        print("Savedata: "+vars.saveptr.ToString("x"));
       }
-    } while (vars.saveptr == IntPtr.Zero);
-    print("Savedata: "+vars.saveptr.ToString("x"));
+    }
   };
   vars.initTracker = initTracker;
 }
@@ -104,14 +92,15 @@ update {
   if(vars.state["reset"].Changed) print("Reset frame: "+vars.state["reset"].Old.ToString()+" -> "+vars.state["reset"].Current.ToString());
   if(vars.state["reset_type"].Changed) print("Reset type: "+vars.state["reset_type"].Old.ToString()+" -> "+vars.state["reset_type"].Current.ToString());
 
-  if (settings["tracker"]) {
+  if (settings["tracker"] || settings["journal"]) {
     if (vars.saveptr == IntPtr.Zero) {
       vars.initTracker();
     }
-    vars.journal = game.ReadBytes((IntPtr)vars.saveptr, 0xec);
+    vars.journal = game.ReadBytes((IntPtr)vars.saveptr, 210);
     int sum = 0;
     Array.ForEach((System.Byte[])vars.journal, i => sum += i);
     if (sum != vars.checksum) {
+      print("Journal: "+vars.checksum.ToString()+" -> "+sum.ToString()+" / 210");
       vars.checksum = sum;
       var post = "journal="+string.Join(",", vars.journal);
       byte[] bytes = Encoding.ASCII.GetBytes(post);
@@ -142,6 +131,8 @@ start {
 split {
   if(vars.state["screen"].Current == 14) return false;
   if(vars.state["screen"].Current < 12) return false;
+  int sum = 0;
+  Array.ForEach((System.Byte[])vars.journal, i => sum += i);
   if(settings["trans"] && vars.state["screen"].Changed && vars.state["screen"].Current == 13) {
     print("Split: Level transition");
     return true;
@@ -165,6 +156,10 @@ split {
     return true;
   } else if(settings["world"] && vars.state["world"].Changed) {
     print("Split: World");
+    return true;
+  } else if(settings["journal"] && sum == 210 && vars.lastsum != sum) {
+    print("Split: Journal");
+    vars.lastsum = sum;
     return true;
   }
 }
