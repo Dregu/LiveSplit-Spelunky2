@@ -36,19 +36,20 @@ init {
   vars.saveptr = IntPtr.Zero;
   vars.checksum = 0;
   vars.lastsum = 0;
+  vars.journal = new List<byte>();
 
   foreach (var page in game.MemoryPages(true)) {
     var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
     IntPtr findptr = scanner.Scan(new SigScanTarget(0, 0x44, 0x52, 0x45, 0x47, 0x55, 0x41, 0x53, 0x4C));
-    IntPtr saveptr = scanner.Scan(new SigScanTarget(16, 0, 0, 0, 0, 0, 0, 0, 0, 0xA3, 0x35, 0, 0, 0, 0, 0, 0));
+    //IntPtr saveptr = scanner.Scan(new SigScanTarget(16, 0, 0, 0, 0, 0, 0, 0, 0, 0xA3, 0x35, 0, 0, 0, 0, 0, 0));
     if (findptr != IntPtr.Zero) {
       ptr = findptr;
     }
-    if (saveptr != IntPtr.Zero) {
+    /*if (saveptr != IntPtr.Zero) {
       vars.saveptr = saveptr;
       vars.journal = game.ReadBytes((IntPtr)vars.saveptr, 210);
       print("Savedata: "+vars.saveptr.ToString("x"));
-    }
+    }*/
   }
   if (ptr == IntPtr.Zero) {
     throw new Exception("Could not find magic number for AutoSplitter!");
@@ -77,6 +78,7 @@ init {
     }
   };
   vars.initTracker = initTracker;
+  vars.initTracker();
 }
 
 update {
