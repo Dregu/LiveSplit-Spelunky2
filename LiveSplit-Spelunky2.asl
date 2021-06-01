@@ -3,7 +3,8 @@ state("Spel2") {}
 startup {
   settings.Add("st", true, "Starting");
   settings.Add("stlevel", true, "Start on start of first level (uses IGT timing) [any%]", "st");
-  settings.Add("stdoor", false, "Start on entering cave door (uses RTA timing) [AS+T, AC, AJE]", "st");
+  settings.Add("stast", false, "Start on start of first level (uses RTA timing) [AS+T]", "st");
+  settings.Add("stdoor", false, "Start on entering cave door (uses RTA timing) [AC, AJE]", "st");
 
   settings.Add("sp", true, "Splitting");
   settings.Add("trans", true, "Split on any level transition screen [any%]", "sp");
@@ -18,6 +19,7 @@ startup {
 
   settings.Add("rs", true, "Resetting");
   settings.Add("rsrestart", true, "Reset on death/instant restart/in camp [any%]", "rs");
+  settings.Add("rsast", false, "Reset on instant restart before meeting Terra [AS+T]", "rs");
   settings.Add("rsdata", false, "Reset on \"Data Management\" reset [AS+T, AC, AJE]", "rs");
   settings.Add("rsmenu", false, "Reset in main menu", "rs");
   settings.Add("rstitle", false, "Reset in title screen", "rs");
@@ -140,6 +142,9 @@ start {
   if(settings["stlevel"] && vars.state["screen"].Current == 12 && vars.state["igt"].Current > 1) {
     print("Start: Level");
     return true;
+  } else if(settings["stast"] && vars.state["screen"].Current == 12 && vars.state["igt"].Current > 1) {
+    print("Start: AS+T");
+    return true;
   } else if(settings["stdoor"] && vars.state["screen"].Current == 11 && vars.state["door"].Changed) {
     print("Start: Door");
     return true;
@@ -187,6 +192,10 @@ reset {
     print("Reset: Restart");
     return true;
   }
+  if(settings["rsast"] && vars.state["igt"].Changed && vars.state["igt"].Current <= 1 && vars.state["shortcuts"].Current == 0) {
+    print("Reset: Restart no shortcuts");
+    return true;
+  }
   if(settings["rstitle"] && vars.state["screen"].Changed && vars.state["screen"].Current == 3) {
     print("Reset: Title");
     return true;
@@ -208,7 +217,7 @@ reset {
 gameTime {
   if(settings["stlevel"]) {
     return TimeSpan.FromSeconds(vars.state["igt"].Current/60.0);
-  } else if(settings["stdoor"]) {
+  } else if(settings["stdoor"] || settings["stast"]) {
     return timer.CurrentTime.RealTime;
   }
 }
