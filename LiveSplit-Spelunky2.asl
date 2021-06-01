@@ -21,6 +21,7 @@ startup {
   settings.Add("rsdata", false, "Reset on \"Data Management\" reset [AS+T, AC, AJE]", "rs");
   settings.Add("rsmenu", false, "Reset in main menu", "rs");
   settings.Add("rstitle", false, "Reset in title screen", "rs");
+  settings.Add("pacifist", false, "Reset on losing pacifist status", "rs");
 
   settings.Add("tm", true, "Timing (Game Time returns the proper time based on your Start option)");
   settings.Add("tmforce", true, "Force current timing method to Game Time", "tm");
@@ -79,6 +80,20 @@ init {
   };
   vars.initTracker = initTracker;
   vars.initTracker();
+
+  IntPtr feedcode_ptr = IntPtr.Zero;
+  foreach (var page in game.MemoryPages(true)) {
+    var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
+    IntPtr findptr = scanner.Scan(new SigScanTarget(0, 0xDE, 0xC0, 0xED, 0xFE));
+    if (findptr != IntPtr.Zero) {
+      feedcode_ptr = findptr;
+      break;
+    }
+  }
+  if (feedcode_ptr == IntPtr.Zero) {
+    throw new Exception("Could not find magic number for AutoSplitter (state feedcode)!");
+  }
+  vars.state.Add(new MemoryWatcher<byte>(feedcode_ptr+0x994) { Name = "pacifist" });
 }
 
 update {
@@ -121,6 +136,7 @@ update {
 start {
   if(vars.state["screen"].Current < 11) return false;
   if(vars.state["screen"].Current > 12) return false;
+  if(settings["pacifist"] && (vars.state["pacifist"].Current & 1) == 0) return false;
   if(settings["stlevel"] && vars.state["screen"].Current == 12 && vars.state["igt"].Current > 1) {
     print("Start: Level");
     return true;
@@ -181,6 +197,10 @@ reset {
   }
   if(settings["rsdata"] && vars.state["screen"].Current == 5 && vars.state["reset"].Changed) {
     print("Reset: Data Management");
+    return true;
+  }
+  if(settings["pacifist"] && vars.state["pacifist"].Changed && (vars.state["pacifist"].Current & 1) == 0) {
+    print("Reset: Pacifist status lost");
     return true;
   }
 }
