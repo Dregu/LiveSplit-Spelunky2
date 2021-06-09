@@ -39,7 +39,7 @@ init {
   vars.saveptr = IntPtr.Zero;
   vars.checksum = 0;
   vars.lastsum = 0;
-  vars.journal = new List<byte>();
+  vars.journal = new byte[0];
 
   foreach (var page in game.MemoryPages(true)) {
     var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
