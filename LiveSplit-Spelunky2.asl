@@ -20,6 +20,7 @@ startup {
   settings.Add("rs", true, "Resetting");
   settings.Add("rsrestart", true, "Reset on death/instant restart/in camp [any%]", "rs");
   settings.Add("rsast", false, "Reset on instant restart before meeting Terra [AS+T]", "rs");
+  settings.Add("rsac", false, "Reset on instant restart before unlocking characters [AC]", "rs");
   settings.Add("rsdata", false, "Reset on \"Data Management\" reset [AS+T, AC, AJE]", "rs");
   settings.Add("rsmenu", false, "Reset in main menu", "rs");
   settings.Add("rstitle", false, "Reset in title screen", "rs");
@@ -39,7 +40,7 @@ init {
   vars.saveptr = IntPtr.Zero;
   vars.checksum = 0;
   vars.lastsum = 0;
-  vars.journal = new List<byte>();
+  vars.journal = new byte[0];
 
   foreach (var page in game.MemoryPages(true)) {
     var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
@@ -193,7 +194,11 @@ reset {
     return true;
   }
   if(settings["rsast"] && vars.state["igt"].Changed && vars.state["igt"].Current <= 1 && vars.state["shortcuts"].Current == 0) {
-    print("Reset: Restart no shortcuts");
+    print("Reset: Restart, no shortcuts");
+    return true;
+  }
+  if(settings["rsac"] && vars.state["igt"].Changed && vars.state["igt"].Current <= 1 && vars.state["characters"].Current == 4) {
+    print("Reset: Restart, no characters");
     return true;
   }
   if(settings["rstitle"] && vars.state["screen"].Changed && vars.state["screen"].Current == 3) {
