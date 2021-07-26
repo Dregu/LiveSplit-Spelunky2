@@ -167,7 +167,6 @@ update {
 
 start {
   if(!vars.initDone) {
-    vars.init();
     return false;
   }
 
@@ -188,7 +187,6 @@ start {
 
 split {
   if(!vars.initDone) {
-    vars.init();
     return false;
   }
 
@@ -229,7 +227,6 @@ split {
 
 reset {
   if(!vars.initDone) {
-    vars.init();
     return false;
   }
 
