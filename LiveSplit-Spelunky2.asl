@@ -36,70 +36,94 @@ startup {
 init {
   vars.reset = false;
   vars.state = new MemoryWatcherList();
-  IntPtr ptr = IntPtr.Zero;
+  vars.ptr = IntPtr.Zero;
+  vars.feedptr = IntPtr.Zero;
   vars.saveptr = IntPtr.Zero;
   vars.checksum = 0;
   vars.lastsum = 0;
   vars.journal = new byte[0];
+  vars.initDone = false;
+  vars.inittime = TimeSpan.FromSeconds(10);
 
-  foreach (var page in game.MemoryPages(true)) {
-    var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
-    IntPtr findptr = scanner.Scan(new SigScanTarget(0, 0x44, 0x52, 0x45, 0x47, 0x55, 0x41, 0x53, 0x4C));
-    //IntPtr saveptr = scanner.Scan(new SigScanTarget(16, 0, 0, 0, 0, 0, 0, 0, 0, 0xA3, 0x35, 0, 0, 0, 0, 0, 0));
-    if (findptr != IntPtr.Zero) {
-      ptr = findptr;
+  Action initMemory = delegate() {
+    TimeSpan runtime = DateTime.Now - game.StartTime;
+    if (runtime > vars.inittime) {
+      foreach (var page in game.MemoryPages(true)) {
+        if (page.BaseAddress.ToInt64() < 0x70000000000) {
+          continue;
+        }
+        var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
+        IntPtr findptr = scanner.Scan(new SigScanTarget(0, 0x44, 0x52, 0x45, 0x47, 0x55, 0x41, 0x53, 0x4C));
+        IntPtr saveptr = scanner.Scan(new SigScanTarget(16, 0, 0, 0, 0, 0, 0, 0, 0, 0xA3, 0x35, 0, 0, 0, 0, 0, 0));
+        IntPtr feedptr = scanner.Scan(new SigScanTarget(0, 0xDE, 0xC0, 0xED, 0xFE));
+
+        if (findptr != IntPtr.Zero) {
+          vars.ptr = findptr;
+          print("AutoSplitter: "+vars.ptr.ToString("x"));
+        }
+        if (saveptr != IntPtr.Zero) {
+          vars.saveptr = saveptr;
+          vars.journal = game.ReadBytes((IntPtr)vars.saveptr, 210);
+          print("Savedata: "+vars.saveptr.ToString("x"));
+        }
+        if (feedptr != IntPtr.Zero && vars.feedptr == IntPtr.Zero) {
+          vars.feedptr = feedptr;
+          print("Feedcode: "+vars.feedptr.ToString("x"));
+        }
+      }
+      if (vars.ptr == IntPtr.Zero) {
+        throw new Exception("Could not find magic number for AutoSplitter!");
+      }
+      if (vars.feedptr == IntPtr.Zero) {
+        throw new Exception("Could not find feedcode!");
+      }
+
+      vars.state.Add(new MemoryWatcher<byte>(vars.ptr+0x14) { Name = "screen" });
+      vars.state.Add(new MemoryWatcher<byte>(vars.ptr+0x1a) { Name = "pause" });
+      vars.state.Add(new MemoryWatcher<int>(vars.ptr+0x1c) { Name = "igt" });
+      vars.state.Add(new MemoryWatcher<byte>(vars.ptr+0x20) { Name = "world" });
+      vars.state.Add(new MemoryWatcher<byte>(vars.ptr+0x21) { Name = "level" });
+      vars.state.Add(new MemoryWatcher<int>(vars.ptr+0x28) { Name = "characters" });
+      vars.state.Add(new MemoryWatcher<byte>(vars.ptr+0x2c) { Name = "shortcuts" });
+      vars.state.Add(new MemoryWatcher<int>(vars.ptr+0x294) { Name = "door" });
+      vars.state.Add(new MemoryWatcher<int>(vars.ptr+0x298) { Name = "reset" });
+      vars.state.Add(new MemoryWatcher<int>(vars.ptr+0x29c) { Name = "reset_type" });
+      vars.state.Add(new MemoryWatcher<byte>(vars.feedptr+0x994) { Name = "pacifist" });
+
+      vars.initDone = true;
     }
-    /*if (saveptr != IntPtr.Zero) {
-      vars.saveptr = saveptr;
-      vars.journal = game.ReadBytes((IntPtr)vars.saveptr, 210);
-      print("Savedata: "+vars.saveptr.ToString("x"));
-    }*/
-  }
-  if (ptr == IntPtr.Zero) {
-    throw new Exception("Could not find magic number for AutoSplitter!");
-  }
-  print("AutoSplitter: "+ptr.ToString("x"));
-  vars.state.Add(new MemoryWatcher<byte>(ptr+0x14) { Name = "screen" });
-  vars.state.Add(new MemoryWatcher<byte>(ptr+0x1a) { Name = "pause" });
-  vars.state.Add(new MemoryWatcher<int>(ptr+0x1c) { Name = "igt" });
-  vars.state.Add(new MemoryWatcher<byte>(ptr+0x20) { Name = "world" });
-  vars.state.Add(new MemoryWatcher<byte>(ptr+0x21) { Name = "level" });
-  vars.state.Add(new MemoryWatcher<int>(ptr+0x28) { Name = "characters" });
-  vars.state.Add(new MemoryWatcher<byte>(ptr+0x2c) { Name = "shortcuts" });
-  vars.state.Add(new MemoryWatcher<int>(ptr+0x294) { Name = "door" });
-  vars.state.Add(new MemoryWatcher<int>(ptr+0x298) { Name = "reset" });
-  vars.state.Add(new MemoryWatcher<int>(ptr+0x29c) { Name = "reset_type" });
+  };
 
   Action initTracker = delegate() {
-    foreach (var page in game.MemoryPages(true)) {
-      var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
-      IntPtr saveptr = scanner.Scan(new SigScanTarget(16, 0, 0, 0, 0, 0, 0, 0, 0, 0xA3, 0x35, 0, 0, 0, 0, 0, 0));
-      if (saveptr != IntPtr.Zero) {
-        vars.saveptr = saveptr;
-        vars.journal = game.ReadBytes((IntPtr)vars.saveptr, 210);
-        print("Savedata: "+vars.saveptr.ToString("x"));
+    TimeSpan runtime = DateTime.Now - game.StartTime;
+    if (runtime > vars.inittime) {
+      foreach (var page in game.MemoryPages(true)) {
+        if (page.BaseAddress.ToInt64() < 0x70000000000) {
+          continue;
+        }
+        var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
+        IntPtr saveptr = scanner.Scan(new SigScanTarget(16, 0, 0, 0, 0, 0, 0, 0, 0, 0xA3, 0x35, 0, 0, 0, 0, 0, 0));
+
+        if (saveptr != IntPtr.Zero) {
+          vars.saveptr = saveptr;
+          vars.journal = game.ReadBytes((IntPtr)vars.saveptr, 210);
+          print("Savedata: "+vars.saveptr.ToString("x"));
+        }
       }
     }
   };
-  vars.initTracker = initTracker;
-  vars.initTracker();
 
-  IntPtr feedcode_ptr = IntPtr.Zero;
-  foreach (var page in game.MemoryPages(true)) {
-    var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
-    IntPtr findptr = scanner.Scan(new SigScanTarget(0, 0xDE, 0xC0, 0xED, 0xFE));
-    if (findptr != IntPtr.Zero) {
-      feedcode_ptr = findptr;
-      break;
-    }
-  }
-  if (feedcode_ptr == IntPtr.Zero) {
-    throw new Exception("Could not find magic number for AutoSplitter (state feedcode)!");
-  }
-  vars.state.Add(new MemoryWatcher<byte>(feedcode_ptr+0x994) { Name = "pacifist" });
+  vars.init = initMemory;
+  vars.initTracker = initTracker;
+  vars.init();
 }
 
 update {
+  if(!vars.initDone) {
+    vars.init();
+    return false;
+  }
+
   if(settings["tmforce"] && timer.CurrentTimingMethod != TimingMethod.GameTime) timer.CurrentTimingMethod = TimingMethod.GameTime;
   vars.state.UpdateAll(game);
   timer.IsGameTimePaused = !vars.state["igt"].Changed;
@@ -115,28 +139,38 @@ update {
   if (settings["tracker"] || settings["journal"]) {
     if (vars.saveptr == IntPtr.Zero) {
       vars.initTracker();
-    }
-    vars.journal = game.ReadBytes((IntPtr)vars.saveptr, 210);
-    int sum = 0;
-    Array.ForEach((System.Byte[])vars.journal, i => sum += i);
-    if (sum != vars.checksum) {
-      print("Journal: "+vars.checksum.ToString()+" -> "+sum.ToString()+" / 210");
-      vars.checksum = sum;
-      var post = "journal="+string.Join(",", vars.journal);
-      byte[] bytes = Encoding.ASCII.GetBytes(post);
-      System.Net.WebRequest req = System.Net.WebRequest.Create("http://localhost:27122/");
-      req.Method = "POST";
-      req.ContentType = "application/x-www-form-urlencoded";
-      Stream dataStream = req.GetRequestStream();
-      dataStream.Write(bytes, 0, bytes.Length);
-      dataStream.Close();
-      System.Net.WebResponse res = req.GetResponse();
-      print(((System.Net.HttpWebResponse)res).StatusDescription);
+    } else {
+      vars.journal = game.ReadBytes((IntPtr)vars.saveptr, 210);
+      int sum = 0;
+      if (vars.journal != null) {
+        Array.ForEach((System.Byte[])vars.journal, i => sum += i);
+        if (sum != vars.checksum) {
+          print("Journal: "+vars.checksum.ToString()+" -> "+sum.ToString()+" / 210");
+          vars.checksum = sum;
+          if (settings["tracker"]) {
+            var post = "journal="+string.Join(",", vars.journal);
+            byte[] bytes = Encoding.ASCII.GetBytes(post);
+            System.Net.WebRequest req = System.Net.WebRequest.Create("http://localhost:27122/");
+            req.Method = "POST";
+            req.ContentType = "application/x-www-form-urlencoded";
+            Stream dataStream = req.GetRequestStream();
+            dataStream.Write(bytes, 0, bytes.Length);
+            dataStream.Close();
+            System.Net.WebResponse res = req.GetResponse();
+            print(((System.Net.HttpWebResponse)res).StatusDescription);
+          }
+        }
+      }
     }
   }
 }
 
 start {
+  if(!vars.initDone) {
+    vars.init();
+    return false;
+  }
+
   if(vars.state["screen"].Current < 11) return false;
   if(vars.state["screen"].Current > 12) return false;
   if(settings["pacifist"] && (vars.state["pacifist"].Current & 1) == 0) return false;
@@ -153,6 +187,11 @@ start {
 }
 
 split {
+  if(!vars.initDone) {
+    vars.init();
+    return false;
+  }
+
   if(vars.state["screen"].Current == 14) return false;
   if(vars.state["screen"].Current < 12) return false;
   int sum = 0;
@@ -189,6 +228,11 @@ split {
 }
 
 reset {
+  if(!vars.initDone) {
+    vars.init();
+    return false;
+  }
+
   if(settings["rsrestart"] && vars.state["igt"].Changed && vars.state["igt"].Current <= 1) {
     print("Reset: Restart");
     return true;
