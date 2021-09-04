@@ -3,8 +3,8 @@ state("Spel2") {}
 startup {
   settings.Add("st", true, "Starting");
   settings.Add("stlevel", true, "Start on start of first level (uses IGT timing) [any%]", "st");
-  settings.Add("stast", false, "Start on start of first level (uses RTA timing) [AS+T]", "st");
-  settings.Add("stdoor", false, "Start on entering cave door (uses RTA timing) [AC, AJE]", "st");
+  settings.Add("stast", false, "Start on start of first level (uses RTA timing) [AC, AS+T]", "st");
+  settings.Add("stdoor", false, "Start on entering cave door (uses RTA timing) [AJE]", "st");
 
   settings.Add("sp", true, "Splitting");
   settings.Add("trans", true, "Split on any level transition screen [any%]", "sp");
@@ -13,8 +13,8 @@ startup {
   settings.Add("hundun", true, "Split on end cutscene after Hundun [any%]", "sp");
   settings.Add("co", true, "Split on end cutscene after Cosmic Ocean [any%]", "sp");
   settings.Add("shortcut", false, "Split on completed shortcut tasks [AS+T]", "sp");
-  settings.Add("character", false, "Split on new character unlocked [AC]", "sp");
-  settings.Add("characters", false, "Split on 20 characters unlocked", "sp");
+  settings.Add("character", false, "Split on new character unlocked [AC 16 splits]", "sp");
+  settings.Add("characters", false, "Split on 20 characters unlocked [AC 1 split]", "sp");
   settings.Add("journal", false, "Split on 100% journal unlocked [AJE]", "sp");
 
   settings.Add("rs", true, "Resetting");
