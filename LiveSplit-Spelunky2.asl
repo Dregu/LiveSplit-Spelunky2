@@ -3,8 +3,8 @@ state("Spel2") {}
 startup {
   settings.Add("st", true, "Starting");
   settings.Add("stlevel", true, "Start on start of first level (uses IGT timing) [any%]", "st");
-  settings.Add("stast", false, "Start on start of first level (uses RTA timing) [AS+T]", "st");
-  settings.Add("stdoor", false, "Start on entering cave door (uses RTA timing) [AC, AJE]", "st");
+  settings.Add("stast", false, "Start on start of first level (uses RTA timing) [AC, AS+T]", "st");
+  settings.Add("stdoor", false, "Start on entering cave door (uses RTA timing) [AJE]", "st");
 
   settings.Add("sp", true, "Splitting");
   settings.Add("trans", true, "Split on any level transition screen [any%]", "sp");
@@ -14,7 +14,7 @@ startup {
   settings.Add("co", true, "Split on end cutscene after Cosmic Ocean [any%]", "sp");
   settings.Add("shortcut", false, "Split on completed shortcut tasks [AS+T]", "sp");
   settings.Add("character", false, "Split on new character unlocked [AC]", "sp");
-  settings.Add("characters", false, "Split on 20 characters unlocked", "sp");
+  settings.Add("characters", false, "Split on 20 characters unlocked [AC]", "sp");
   settings.Add("journal", false, "Split on 100% journal unlocked [AJE]", "sp");
 
   settings.Add("rs", true, "Resetting");
@@ -133,7 +133,15 @@ update {
   if(vars.state["characters"].Changed) print("Characters: "+vars.state["characters"].Old.ToString()+" -> "+vars.state["characters"].Current.ToString());
   if(vars.state["shortcuts"].Changed) print("Shortcuts: "+vars.state["shortcuts"].Old.ToString()+" -> "+vars.state["shortcuts"].Current.ToString());
   if(vars.state["door"].Changed) print("Door frame: "+vars.state["door"].Old.ToString()+" -> "+vars.state["door"].Current.ToString());
-  if(vars.state["reset"].Changed) print("Reset frame: "+vars.state["reset"].Old.ToString()+" -> "+vars.state["reset"].Current.ToString());
+  if(vars.state["reset"].Changed) {
+    print("Reset frame: "+vars.state["reset"].Old.ToString()+" -> "+vars.state["reset"].Current.ToString());
+    if (settings["tracker"]) {
+      System.Net.WebRequest req = System.Net.WebRequest.Create("http://localhost:27122/clear");
+      req.Method = "POST";
+      System.Net.WebResponse res = req.GetResponse();
+      print(((System.Net.HttpWebResponse)res).StatusDescription);
+    }
+  }
   if(vars.state["reset_type"].Changed) print("Reset type: "+vars.state["reset_type"].Old.ToString()+" -> "+vars.state["reset_type"].Current.ToString());
 
   if (settings["tracker"] || settings["journal"]) {
@@ -177,7 +185,7 @@ start {
     print("Start: Level");
     return true;
   } else if(settings["stast"] && vars.state["screen"].Current == 12 && vars.state["igt"].Current > 1) {
-    print("Start: AS+T");
+    print("Start: AS+T / AC");
     return true;
   } else if(settings["stdoor"] && vars.state["screen"].Current == 11 && vars.state["door"].Changed) {
     print("Start: Door");
