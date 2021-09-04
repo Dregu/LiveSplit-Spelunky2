@@ -44,6 +44,7 @@ init {
   vars.journal = new byte[0];
   vars.initDone = false;
   vars.inittime = TimeSpan.FromSeconds(10);
+  vars.savepattern = new SigScanTarget(16, "?? 00 00 00 00 00 00 00 A3 35 00 00 00 00 00 00");
 
   Action initMemory = delegate() {
     TimeSpan runtime = DateTime.Now - game.StartTime;
@@ -54,7 +55,7 @@ init {
         }
         var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
         IntPtr findptr = scanner.Scan(new SigScanTarget(0, 0x44, 0x52, 0x45, 0x47, 0x55, 0x41, 0x53, 0x4C));
-        IntPtr saveptr = scanner.Scan(new SigScanTarget(16, 0, 0, 0, 0, 0, 0, 0, 0, 0xA3, 0x35, 0, 0, 0, 0, 0, 0));
+        IntPtr saveptr = scanner.Scan(vars.savepattern, 8);
         IntPtr feedptr = scanner.Scan(new SigScanTarget(0, 0xDE, 0xC0, 0xED, 0xFE));
 
         if (findptr != IntPtr.Zero) {
@@ -102,7 +103,7 @@ init {
           continue;
         }
         var scanner = new SignatureScanner(game, page.BaseAddress, (int) page.RegionSize);
-        IntPtr saveptr = scanner.Scan(new SigScanTarget(16, 0, 0, 0, 0, 0, 0, 0, 0, 0xA3, 0x35, 0, 0, 0, 0, 0, 0));
+        IntPtr saveptr = scanner.Scan(vars.savepattern, 8);
 
         if (saveptr != IntPtr.Zero) {
           vars.saveptr = saveptr;
