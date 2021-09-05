@@ -134,7 +134,15 @@ update {
   if(vars.state["characters"].Changed) print("Characters: "+vars.state["characters"].Old.ToString()+" -> "+vars.state["characters"].Current.ToString());
   if(vars.state["shortcuts"].Changed) print("Shortcuts: "+vars.state["shortcuts"].Old.ToString()+" -> "+vars.state["shortcuts"].Current.ToString());
   if(vars.state["door"].Changed) print("Door frame: "+vars.state["door"].Old.ToString()+" -> "+vars.state["door"].Current.ToString());
-  if(vars.state["reset"].Changed) print("Reset frame: "+vars.state["reset"].Old.ToString()+" -> "+vars.state["reset"].Current.ToString());
+  if(vars.state["reset"].Changed) {
+    print("Reset frame: "+vars.state["reset"].Old.ToString()+" -> "+vars.state["reset"].Current.ToString());
+    if (settings["tracker"]) {
+      System.Net.WebRequest req = System.Net.WebRequest.Create("http://localhost:27122/clear");
+      req.Method = "POST";
+      System.Net.WebResponse res = req.GetResponse();
+      print(((System.Net.HttpWebResponse)res).StatusDescription);
+    }
+  }
   if(vars.state["reset_type"].Changed) print("Reset type: "+vars.state["reset_type"].Old.ToString()+" -> "+vars.state["reset_type"].Current.ToString());
 
   if (settings["tracker"] || settings["journal"]) {
@@ -178,7 +186,7 @@ start {
     print("Start: Level");
     return true;
   } else if(settings["stast"] && vars.state["screen"].Current == 12 && vars.state["igt"].Current > 1) {
-    print("Start: AS+T");
+    print("Start: AS+T / AC");
     return true;
   } else if(settings["stdoor"] && vars.state["screen"].Current == 11 && vars.state["door"].Changed) {
     print("Start: Door");
