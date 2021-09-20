@@ -44,7 +44,7 @@ init {
   vars.journal = new byte[0];
   vars.initDone = false;
   vars.inittime = TimeSpan.FromSeconds(10);
-  vars.savepattern = new SigScanTarget(16, "?? 00 00 00 00 00 00 00 A3 35 00 00 00 00 00 00");
+  vars.savepattern = new SigScanTarget(16, "?? 00 00 00 00 00 00 00 33 36 00 00 00 00 00 00");
 
   Action initMemory = delegate() {
     TimeSpan runtime = DateTime.Now - game.StartTime;
