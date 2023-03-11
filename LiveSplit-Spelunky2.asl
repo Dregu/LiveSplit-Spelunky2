@@ -4,7 +4,8 @@ startup {
   settings.Add("st", true, "Starting");
   settings.Add("stlevel", true, "Start on start of first level (uses IGT timing) [any%]", "st");
   settings.Add("stast", false, "Start on start of first level (uses RTA timing) [AC, AS+T]", "st");
-  settings.Add("stdoor", false, "Start on entering cave door (uses RTA timing) [AJE]", "st");
+  settings.Add("stdoor", false, "Start on entering cave door in camp (uses RTA timing) [AJE]", "st");
+  settings.Add("stcamp", false, "Start on entering camp (uses RTA timing)", "st");
 
   settings.Add("sp", true, "Splitting");
   settings.Add("trans", true, "Split on any level transition screen [any%]", "sp");
@@ -27,14 +28,14 @@ startup {
   settings.Add("pacifist", false, "Reset on losing pacifist status", "rs");
 
   settings.Add("tm", true, "Timing (Game Time returns the proper time based on your Start option)");
-  settings.Add("tmforce", true, "Force current timing method to Game Time", "tm");
+  settings.Add("tmforce", true, "Force LiveSplit timing method to Game Time", "tm");
+  settings.Add("tmsoigt", false, "Use Sum of IGT instead of default timing", "tm");
 
   settings.Add("ms", true, "Miscellaneous");
   settings.Add("tracker", false, "Send journal data to s2tracker [AC, AJE]", "ms");
 }
 
 init {
-  vars.reset = false;
   vars.state = new MemoryWatcherList();
   vars.ptr = IntPtr.Zero;
   vars.feedptr = IntPtr.Zero;
@@ -45,6 +46,8 @@ init {
   vars.initDone = false;
   vars.inittime = TimeSpan.FromSeconds(10);
   vars.savepattern = new SigScanTarget(16, "?? 00 00 00 00 00 00 00 33 36 00 00 00 00 00 00");
+  vars.soigt = 0;
+  vars.started = false;
 
   Action initMemory = delegate() {
     TimeSpan runtime = DateTime.Now - game.StartTime;
@@ -172,6 +175,12 @@ update {
       }
     }
   }
+
+  if (settings["tmsoigt"] && vars.started && vars.state["igt"].Current < vars.state["igt"].Old)
+  {
+    print("Sum of IGT: "+vars.soigt.ToString()+" + "+vars.state["igt"].Old.ToString());
+    vars.soigt += vars.state["igt"].Old;
+  }
 }
 
 start {
@@ -191,7 +200,17 @@ start {
   } else if(settings["stdoor"] && vars.state["screen"].Current == 11 && vars.state["door"].Changed) {
     print("Start: Door");
     return true;
+  } else if(settings["stcamp"] && vars.state["screen"].Current == 11) {
+    print("Start: Camp");
+    return true;
   }
+}
+
+onStart {
+  vars.soigt = 0;
+  if (settings["stdoor"])
+    vars.soigt = -vars.state["igt"].Current;
+  vars.started = true;
 }
 
 split {
@@ -238,7 +257,6 @@ reset {
   if(!vars.initDone) {
     return false;
   }
-
   if(settings["rsrestart"] && vars.state["igt"].Changed && vars.state["igt"].Current <= 1) {
     print("Reset: Restart");
     return true;
@@ -269,10 +287,16 @@ reset {
   }
 }
 
+onReset {
+  vars.soigt = 0;
+  vars.started = false;
+}
+
 gameTime {
-  if(settings["stlevel"]) {
+  if(settings["tmsoigt"]) {
+    return TimeSpan.FromSeconds((vars.state["igt"].Current + vars.soigt)/60.0);
+  } else if(settings["stlevel"]) {
     return TimeSpan.FromSeconds(vars.state["igt"].Current/60.0);
-  } else if(settings["stdoor"] || settings["stast"]) {
-    return timer.CurrentTime.RealTime;
   }
+  return timer.CurrentTime.RealTime;
 }
