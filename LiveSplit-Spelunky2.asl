@@ -140,10 +140,14 @@ update {
   if(vars.state["reset"].Changed) {
     print("Reset frame: "+vars.state["reset"].Old.ToString()+" -> "+vars.state["reset"].Current.ToString());
     if (settings["tracker"]) {
-      System.Net.WebRequest req = System.Net.WebRequest.Create("http://localhost:27122/clear");
-      req.Method = "POST";
-      System.Net.WebResponse res = req.GetResponse();
-      print(((System.Net.HttpWebResponse)res).StatusDescription);
+      try {
+        System.Net.WebRequest req = System.Net.WebRequest.Create("http://localhost:27122/clear");
+        req.Method = "POST";
+        System.Net.WebResponse res = req.GetResponse();
+        print(((System.Net.HttpWebResponse)res).StatusDescription);
+      } catch (System.Net.WebException e) {
+        print("Failed to update s2tracker (is it running?): " + e.ToString());
+      }
     }
   }
   if(vars.state["reset_type"].Changed) print("Reset type: "+vars.state["reset_type"].Old.ToString()+" -> "+vars.state["reset_type"].Current.ToString());
@@ -160,16 +164,20 @@ update {
           print("Journal: "+vars.checksum.ToString()+" -> "+sum.ToString()+" / 210");
           vars.checksum = sum;
           if (settings["tracker"]) {
-            var post = "journal="+string.Join(",", vars.journal);
-            byte[] bytes = Encoding.ASCII.GetBytes(post);
-            System.Net.WebRequest req = System.Net.WebRequest.Create("http://localhost:27122/");
-            req.Method = "POST";
-            req.ContentType = "application/x-www-form-urlencoded";
-            Stream dataStream = req.GetRequestStream();
-            dataStream.Write(bytes, 0, bytes.Length);
-            dataStream.Close();
-            System.Net.WebResponse res = req.GetResponse();
-            print(((System.Net.HttpWebResponse)res).StatusDescription);
+            try {
+              var post = "journal="+string.Join(",", vars.journal);
+              byte[] bytes = Encoding.ASCII.GetBytes(post);
+              System.Net.WebRequest req = System.Net.WebRequest.Create("http://localhost:27122/");
+              req.Method = "POST";
+              req.ContentType = "application/x-www-form-urlencoded";
+              Stream dataStream = req.GetRequestStream();
+              dataStream.Write(bytes, 0, bytes.Length);
+              dataStream.Close();
+              System.Net.WebResponse res = req.GetResponse();
+              print(((System.Net.HttpWebResponse)res).StatusDescription);
+            } catch (System.Net.WebException e) {
+              print("Failed to update s2tracker (is it running?): " + e.ToString());
+            }
           }
         }
       }
