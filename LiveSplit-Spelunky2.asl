@@ -5,7 +5,8 @@ startup {
   settings.Add("stlevel", true, "Start on start of first level (uses IGT timing) [any%]", "st");
   settings.Add("stast", false, "Start on start of first level (uses RTA timing) [AC, AS+T]", "st");
   settings.Add("stdoor", false, "Start on entering cave door in camp (uses RTA timing) [AJE]", "st");
-  settings.Add("stcamp", false, "Start on entering camp (uses RTA timing)", "st");
+  settings.Add("stcamp", false, "Start on entering camp (uses RTA timing) [AA]", "st");
+  settings.Add("starena", false, "Start on arena intro (uses RTA timing) [AA]", "st");
 
   settings.Add("sp", true, "Splitting");
   settings.Add("trans", true, "Split on any level transition screen [any%]", "sp");
@@ -22,7 +23,7 @@ startup {
   settings.Add("rsrestart", true, "Reset on death/instant restart/in camp [any%]", "rs");
   settings.Add("rsast", false, "Reset on instant restart before meeting Terra [AS+T]", "rs");
   settings.Add("rsac", false, "Reset on instant restart before unlocking characters [AC]", "rs");
-  settings.Add("rsdata", false, "Reset on \"Data Management\" reset [AS+T, AC, AJE]", "rs");
+  settings.Add("rsdata", false, "Reset on \"Data Management\" reset [AS+T, AC, AJE, AA]", "rs");
   settings.Add("rsmenu", false, "Reset in main menu", "rs");
   settings.Add("rstitle", false, "Reset in title screen", "rs");
   settings.Add("pacifist", false, "Reset on losing pacifist status", "rs");
@@ -140,10 +141,14 @@ update {
   if(vars.state["reset"].Changed) {
     print("Reset frame: "+vars.state["reset"].Old.ToString()+" -> "+vars.state["reset"].Current.ToString());
     if (settings["tracker"]) {
-      System.Net.WebRequest req = System.Net.WebRequest.Create("http://localhost:27122/clear");
-      req.Method = "POST";
-      System.Net.WebResponse res = req.GetResponse();
-      print(((System.Net.HttpWebResponse)res).StatusDescription);
+      try {
+        System.Net.WebRequest req = System.Net.WebRequest.Create("http://localhost:27122/clear");
+        req.Method = "POST";
+        System.Net.WebResponse res = req.GetResponse();
+        print(((System.Net.HttpWebResponse)res).StatusDescription);
+      } catch (System.Net.WebException e) {
+        print("Failed to update s2tracker (is it running?): " + e.ToString());
+      }
     }
   }
   if(vars.state["reset_type"].Changed) print("Reset type: "+vars.state["reset_type"].Old.ToString()+" -> "+vars.state["reset_type"].Current.ToString());
@@ -160,16 +165,20 @@ update {
           print("Journal: "+vars.checksum.ToString()+" -> "+sum.ToString()+" / 210");
           vars.checksum = sum;
           if (settings["tracker"]) {
-            var post = "journal="+string.Join(",", vars.journal);
-            byte[] bytes = Encoding.ASCII.GetBytes(post);
-            System.Net.WebRequest req = System.Net.WebRequest.Create("http://localhost:27122/");
-            req.Method = "POST";
-            req.ContentType = "application/x-www-form-urlencoded";
-            Stream dataStream = req.GetRequestStream();
-            dataStream.Write(bytes, 0, bytes.Length);
-            dataStream.Close();
-            System.Net.WebResponse res = req.GetResponse();
-            print(((System.Net.HttpWebResponse)res).StatusDescription);
+            try {
+              var post = "journal="+string.Join(",", vars.journal);
+              byte[] bytes = Encoding.ASCII.GetBytes(post);
+              System.Net.WebRequest req = System.Net.WebRequest.Create("http://localhost:27122/");
+              req.Method = "POST";
+              req.ContentType = "application/x-www-form-urlencoded";
+              Stream dataStream = req.GetRequestStream();
+              dataStream.Write(bytes, 0, bytes.Length);
+              dataStream.Close();
+              System.Net.WebResponse res = req.GetResponse();
+              print(((System.Net.HttpWebResponse)res).StatusDescription);
+            } catch (System.Net.WebException e) {
+              print("Failed to update s2tracker (is it running?): " + e.ToString());
+            }
           }
         }
       }
@@ -189,7 +198,7 @@ start {
   }
 
   if(vars.state["screen"].Current < 11) return false;
-  if(vars.state["screen"].Current > 12) return false;
+  if(vars.state["screen"].Current > 25) return false;
   if(settings["pacifist"] && (vars.state["pacifist"].Current & 1) == 0) return false;
   if(settings["stlevel"] && vars.state["screen"].Current == 12 && vars.state["igt"].Current > 1) {
     print("Start: Level");
@@ -202,6 +211,9 @@ start {
     return true;
   } else if(settings["stcamp"] && vars.state["screen"].Current == 11) {
     print("Start: Camp");
+    return true;
+  } else if(settings["starena"] && vars.state["screen"].Current == 25) {
+    print("Start: Arena Intro");
     return true;
   }
 }
